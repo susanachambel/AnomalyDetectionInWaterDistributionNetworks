@@ -8,11 +8,18 @@ Created on Tue Jan 21 15:48:49 2020
 
 import mysql.connector
 import pandas as pd
+sys.path.append('../Functions')
+from configuration import *
+
+root = read_config()
+path_init = get_path(root)
+db_config = get_db(root)
+wmes = get_wmes(root)
 
 mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  passwd="@GatitO26@"
+  host=db_config['host'],
+  user=db_config['user'],
+  passwd=db_config['pw']
 )
 
 print(mydb)
@@ -21,9 +28,7 @@ print("\nReport initiated\n")
 
 cursor = mydb.cursor(buffered=True)
 
-path = "..\\Reports\\sensor_report.csv"
-wmes = ["infraquinta","barreiro","beja"]
-
+path = path_init + "\\Reports\\sensor_report.csv"
 
 df = pd.DataFrame()
 df["id"] = pd.Series([], dtype=int)

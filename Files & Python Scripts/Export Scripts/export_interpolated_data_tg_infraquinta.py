@@ -11,15 +11,21 @@ Created on Thu Feb 27 16:09:00 2020
     create_interpolated_df(df) is equal to the one given when selecting the data.
 """
 
+import sys
+sys.path.append('../Functions')
+from data_selection import *
+from data_interpolation import *
+from configuration import *
 import pandas as pd
-from select_data import *
-from interpolate_data import *
+
+root = read_config()
+path_init = get_path(root)
 
 wme = ["infraquinta",15]
   
 print(wme[0] + ": " + str(wme[1]) + " sensors found")
      
-sensor_id = 2
+sensor_id = 1
 for sensor in range(sensor_id, wme[1]+1):
         
     print(" -> Sensor " + str(sensor_id))
@@ -42,7 +48,7 @@ for sensor in range(sensor_id, wme[1]+1):
     dfs_drs = []
     
     for dr in drs:
-        df_aux = select_data(wme[0], "real", sensor_id, dr[0], dr[1])
+        df_aux = select_data(path_init, wme[0], "real", sensor_id, dr[0], dr[1])
         dfs_drs.append([df_aux,dr[0],dr[1]])
           
     df_total = pd.DataFrame()
@@ -57,7 +63,7 @@ for sensor in range(sensor_id, wme[1]+1):
         df_total = df_total.append(df)
         print("  Result: " + str(df.shape[0]) + " rows")
             
-    path = "..\\Data\\" + wme[0] + "\\interpolated\\sensor_" + str(sensor_id) + ".csv"
+    path = path_init + "\\Data\\" + wme[0] + "\\interpolated\\sensor_" + str(sensor_id) + ".csv"
     df_total.to_csv(index=True, path_or_buf=path)
         
     print("  Result: " + str(df_total.shape[0]) + " rows")

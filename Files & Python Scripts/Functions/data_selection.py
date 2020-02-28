@@ -14,9 +14,9 @@ def process_df(df):
     del df['date']
     return df
 
-def select_data(wme, type, sensor_id, min_date, max_date):
-    
-    path = "..\\Data\\" + wme + "\\" + type + "\\sensor_" + str(sensor_id) + ".csv"
+def select_data(path_init, wme, type, sensor_id, min_date, max_date):
+        
+    path = path_init + "\\Data\\" + wme + "\\" + type + "\\sensor_" + str(sensor_id) + ".csv"
     df = pd.read_csv(path)
     df = process_df(df) 
     

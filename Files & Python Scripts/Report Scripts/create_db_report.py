@@ -10,11 +10,18 @@ Exports telemanagement (telegestao) data to a csv -> one sensor per file
 
 import mysql.connector
 import pandas as pd
+sys.path.append('../Functions')
+from configuration import *
+
+root = read_config()
+path_init = get_path(root)
+db_config = get_db(root)
+wmes = get_wmes(root)
 
 mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  passwd="@GatitO26@"
+  host=db_config['host'],
+  user=db_config['user'],
+  passwd=db_config['pw']
 )
 
 print(mydb)
@@ -23,8 +30,7 @@ print("\nReport initiated\n")
 
 cursor = mydb.cursor(buffered=True)
 
-path = "..\\Reports\\db_report.csv"
-wmes = ["infraquinta","barreiro","beja"]
+path = path_init + "\\Reports\\db_report.csv"
 
 
 df = pd.DataFrame()

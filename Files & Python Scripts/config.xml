@@ -1,0 +1,7 @@
+<configuration>
+    <database host="localhost" user="root" pw="@GatitO26@"></database>
+    <path>C:\Users\susan\Documents\IST\Tese\Python Files</path> 
+    <wme name="barreiro"></wme>
+    <wme name="beja"></wme>
+    <wme name="infraquinta"></wme>
+</configuration>
