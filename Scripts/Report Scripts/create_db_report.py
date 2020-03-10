@@ -10,6 +10,7 @@ Exports telemanagement (telegestao) data to a csv -> one sensor per file
 
 import mysql.connector
 import pandas as pd
+import sys
 sys.path.append('../Functions')
 from configuration import *
 

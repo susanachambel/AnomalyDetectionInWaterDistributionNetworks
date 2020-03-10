@@ -8,6 +8,7 @@ Created on Tue Jan 21 15:48:49 2020
 
 import mysql.connector
 import pandas as pd
+import sys
 sys.path.append('../Functions')
 from configuration import *
 

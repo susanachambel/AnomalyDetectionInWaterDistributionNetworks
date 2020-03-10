@@ -30,3 +30,9 @@ def get_wmes(root):
     for wme in root.findall('wme'):
         wmes.append(wme.get('name'))   
     return wmes
+
+def get_wmes_sensors(root):
+    wmes = []
+    for wme in root.findall('wme'):
+        wmes.append([wme.get('name'),int(wme.get('sensors'))])
+    return wmes

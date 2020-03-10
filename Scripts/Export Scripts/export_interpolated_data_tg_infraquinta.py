@@ -25,7 +25,7 @@ wme = ["infraquinta",15]
   
 print(wme[0] + ": " + str(wme[1]) + " sensors found")
      
-sensor_id = 1
+sensor_id = 5
 for sensor in range(sensor_id, wme[1]+1):
         
     print(" -> Sensor " + str(sensor_id))
