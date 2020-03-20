@@ -6,22 +6,15 @@ Created on Tue Jan 21 15:48:49 2020
 
 """
 
-import mysql.connector
 import pandas as pd
 import sys
 sys.path.append('../Functions')
 from configuration import *
 
-root = read_config()
-path_init = get_path(root)
-db_config = get_db(root)
-wmes = get_wmes(root)
-
-mydb = mysql.connector.connect(
-  host=db_config['host'],
-  user=db_config['user'],
-  passwd=db_config['pw']
-)
+config = Configuration()
+path_init = config.path
+wmes = config.wmes
+mydb = config.create_db_connection()
 
 print(mydb)
 
@@ -75,7 +68,8 @@ for wme in wmes:
         else:
             type = "flow"
         
-        df = df.append({'wme': wme, 'id': i, 'name': name, 'type': type, 'n_rows': n_rows, 'min_date': min_date, 'max_date': max_date}, ignore_index=True)
+        df = df.append({'wme': wme, 'id': i, 'name': name, 'type': type, 'n_rows': n_rows, 
+                        'min_date': min_date, 'max_date': max_date}, ignore_index=True)
         
         sensor_id += 1
         

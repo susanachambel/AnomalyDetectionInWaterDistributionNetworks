@@ -7,7 +7,24 @@ Created on Fri Jan 28 20:31:44 2020
 """
 
 import xml.etree.ElementTree as ET
+import mysql.connector
 
+class Configuration:
+    def __init__(self):
+        self.root= read_config()
+        self.db = get_db(self.root)
+        self.path = get_path(self.root)
+        self.wmes = get_wmes(self.root)
+        self.wmes_sensors = get_wmes_sensors(self.root)
+    
+    def create_db_connection(self):
+        mydb = mysql.connector.connect(
+            host=self.db['host'],
+            user=self.db['user'],
+            passwd=self.db['pw']
+            )
+        return mydb
+        
 def read_config():    
     path = "..\\config.xml"     
     doc = ET.parse(path)

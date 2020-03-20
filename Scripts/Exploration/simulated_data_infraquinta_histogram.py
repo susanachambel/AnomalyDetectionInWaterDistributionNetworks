@@ -14,10 +14,8 @@ from epanettools.examples import simple # this is just to get the path of standa
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-root = read_config()
-path_init = get_path(root)
-
+config = Configuration()
+path_init = config.path
 
 file = 'link_flow_summer'
 

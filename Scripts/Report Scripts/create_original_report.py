@@ -13,16 +13,13 @@ sys.path.append('../Functions')
 from configuration import *
 from data_selection import *
 
-root = read_config()
-path_init = get_path(root)
-wmes = get_wmes_sensors(root)
-
+config = Configuration()
+path_init = config.path
+wmes = config.wmes_sensors
 
 print("\nReport initiated\n")
 
-
 path_export = path_init + "\\Reports\\original_data_report.csv"
-
 
 df = pd.DataFrame()
 
@@ -52,13 +49,11 @@ for wme_tmp in wmes:
         p_75 =  df_description.loc['75%',:].value
         max =  df_description.loc['max',:].value
         
-        
         df = df.append({'wme': wme, 'id': sensor_id,'n_rows': n_rows, 
                         'min_date': min_date, 'max_date': max_date,
                         'mean': mean, 'std': std, 'min': min,
                         '25%': p_25, '50%': p_50, '75%': p_75,
                         'max': max, 'neg_values': neg_values}, ignore_index=True)
-
               
 df.to_csv(index=False, path_or_buf=path_export)
 print("\nReport completed")  

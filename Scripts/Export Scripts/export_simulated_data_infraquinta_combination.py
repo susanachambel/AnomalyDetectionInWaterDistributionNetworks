@@ -10,8 +10,8 @@ import sys
 sys.path.append('../Functions')
 from configuration import *
 
-root = read_config()
-path_init = get_path(root)
+config = Configuration()
+path_init = config.path
 
 files = ['node_pressure_summer', 'node_pressure_winter', 'link_flow_summer', 'link_flow_winter']
 

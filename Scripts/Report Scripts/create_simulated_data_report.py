@@ -11,16 +11,35 @@ import sys
 sys.path.append('../Functions')
 from configuration import *
 
-root = read_config()
-path_init = get_path(root)
-wmes = get_wmes(root)
+config = Configuration()
+path_init = config.path
 
+sensors = [1,2,3,6,7,8,9,10,11,12,13,14,15]
+seasons = ['summer', 'winter']
+
+df = pd.DataFrame()
 
 print("\nReport initiated\n")
 
-path = path_init + "\\Data\\infraquinta\\simulated\\NodePressure.txt"
+for sensor_id in sensors:
+    
+    print("Sensor " + str(sensor_id))
+    
+    for season in seasons:
+               
+        path_import = path_init + "\\Data\\infraquinta\\simulated\\sensor_" + str(sensor_id) + "_" + season + ".csv"
+        df_sensor = pd.read_csv(path_import, sep=",", header=None)
+        
+        
+        print(df_sensor)
+        
+        
+        #df = df.append({'wme': wme, 'id': i, 'name': name, 'type': type, 'n_rows': n_rows,
+                        'min_date': min_date, 'max_date': max_date}, ignore_index=True)
+        
 
-df = pd.read_csv(path, sep="  ", header=None)
+path_export = path_init + "\\Reports\\simulated_data_report.csv"
+df.to_csv(index=False, path_or_buf=path_export)
 
 print(df.info())
 

@@ -18,8 +18,8 @@ from data_interpolation import *
 from configuration import *
 import pandas as pd
 
-root = read_config()
-path_init = get_path(root)
+config = Configuration()
+path_init = config.path
 
 wme = ["infraquinta",15]
   

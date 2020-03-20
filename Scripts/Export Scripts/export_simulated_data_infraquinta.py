@@ -12,8 +12,9 @@ from configuration import *
 from epanettools.epanettools import EPANetSimulation, Node, Link, Network, Nodes, Links, Patterns, Pattern, Controls, Control # import all elements needed
 from epanettools.examples import simple # this is just to get the path of standard examples
 
-root = read_config()
-path_init = get_path(root)
+
+config = Configuration()
+path_init = config.path
 
 path = path_init + "\\Data\\infraquinta\\EPANET Models\\INP Files\\StatusQuoInverno2018.inp"
 es=EPANetSimulation(path)

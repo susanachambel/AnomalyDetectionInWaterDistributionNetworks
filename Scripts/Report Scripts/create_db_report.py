@@ -14,16 +14,10 @@ import sys
 sys.path.append('../Functions')
 from configuration import *
 
-root = read_config()
-path_init = get_path(root)
-db_config = get_db(root)
-wmes = get_wmes(root)
-
-mydb = mysql.connector.connect(
-  host=db_config['host'],
-  user=db_config['user'],
-  passwd=db_config['pw']
-)
+config = Configuration()
+path_init = config.path
+wmes= config.wmes
+mydb = config.create_db_connection()
 
 print(mydb)
 
