@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+  <title>WISDOM</title>
+
+  <link rel="icon" href="{{ url_for('static', filename='Favicon/water_drop.svg') }} " type="image/svg">
+
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.1/css/all.css">
+
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/css/bootstrap-select.min.css">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+</head>
+
+<body>
+
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src=" https://code.jquery.com/jquery-3.4.1.min.js"> </script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
+  </script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+    integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/js/bootstrap-select.min.js"></script>
+
+
+  <div class="container-fluid bg-dark text-white">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark pl-0 pr-0">
+      <a class="navbar-brand mr-4">WISDOM</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+          <div class="container-fluid flex-nowrap justify-content-start">
+            <i class="fa fa-chart-bar mr-2"></i>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">Visualization <span class="sr-only">(current)</span></a>
+            </li>
+          </div>
+          <div class="container-fluid flex-nowrap justify-content-start">
+            <i class="fa fa-phone mr-2"></i>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Contacts</a>
+            </li>
+          </div>
+          <div class="container-fluid flex-nowrap justify-content-start">
+            <i class="fa fa-bullhorn mr-2"></i>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Acknowledgements</a>
+            </li>
+          </div>
+        </ul>
+      </div>
+    </nav>
+  </div>
+
+  <div class="container-fluid">
+    <div class="row pt-4 pb-3 pl-4 pr-4">
+      <div class="col-sm-4">
+        <form id="form-target" class="needs-validation" novalidate>
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title">Target Time Series</h5>
+
+              <div class="form-group ">
+                <label class="text-dark font-weight-bold" for="exampleInputEmail1">Source</label>
+                <select id="source" class="selectpicker form-control" title="Nothing selected" required>
+                  <option value="infraquinta">Infraquinta</option>
+                  <option value="barreiro">Barreiro</option>
+                  <option value="beja">Beja</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Focus</label>
+                <div >
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="real"
+                      name="check-focus">
+                    <label class="form-check-label" for="inlineCheckbox1">Real</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="simulated"
+                      name="check-focus">
+                    <label class="form-check-label" for="inlineCheckbox2">Simulated</label>
+                  </div>
+                </div>
+                <div id="div-focus">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Sensor Group</label>
+                <div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="sensor-group-1" value="telemanagement"
+                      name="check-sensor-group">
+                    <label class="form-check-label" for="sensor-group-1">Telemanagement</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="sensor-group-2" value="telemetry"
+                      name="check-sensor-group">
+                    <label class="form-check-label" for="sensor-group-2">Telemetry</label>
+                  </div>
+                </div>
+                <div id="div-sensor-group">
+                </div>
+              </div>
+
+              <div id="div-sensor-type" class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Sensor Type</label>
+                <select id="sensor-type" class="selectpicker form-control" multiple data-actions-box="true">
+                  <option value="flow"> Flow</option>
+                  <option value="pressure">Pressure</option>
+                </select>
+              </div>
+
+              <div id="div-sensor-name" class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Sensor Name</label>
+                <select id="sensor-name" class="selectpicker form-control" data-live-search="true" multiple
+                  data-actions-box="true" multiple data-selected-text-format="count > 5">
+                  <optgroup id="cities" label="Telemetry">
+                    <option data-subtext="Real • Flow" data-tokens="Telemetry Real Flow">Sensor 1</option>
+                    <option data-subtext="Real • Pressure" data-tokens="Telemetry Real Pressure">Sensor 2</option>
+                    <option data-subtext="Simulated • Pressure" data-tokens="Telemetry Simulated Pressure">Sensor 3
+                    </option>
+                  </optgroup>
+                  <optgroup label="Telemanagement">
+                    <option data-subtext="Real • Flow" data-tokens="Telemanagement Real Flow">Sensor 1</option>
+                    <option data-subtext="Simulated • Flow" data-tokens="Telemanagement Simulated Fçpw">Sensor 2
+                    </option>
+                    <option data-subtext="Simulated • Pressure" data-tokens="Telemanagement Simulated Pressure">Sensor
+                      3</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Date Range</label>
+                <input id="daterange" class="form-control" type="text" name="daterange" value="01/06/2017 - 15/06/2017" />
+              </div>
+
+              <div id="div-calendar" class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Calendar</label>
+                <select id="calendar" class="selectpicker form-control" data-live-search="true" multiple
+                  data-actions-box="true">
+                  <option value="monday" data-tokens="Weekday">Monday</option>
+                  <option value="tuesday" data-tokens="Weekday">Tuesday</option>
+                  <option value="wednesday" data-tokens="Weekday">Wednesday</option>
+                  <option value="thursday" data-tokens="Weekday">Thursday</option>
+                  <option value="friday" data-tokens="Weekday">Friday</option>
+                  <option value="saturday" data-tokens="Weekend">Saturday</option>
+                  <option value="sunday" data-tokens="Weekend">Sunday</option>
+                </select>
+              </div>
+
+              <div class="form-group mb-2">
+                <label class="mb-0 text-dark font-weight-bold" for="granularity-value">Granularity</label>
+                <div class="container-fluid pl-0 pr-0">
+                  <div class="row ml-0">
+                    <div class="col mt-2 pl-0">
+                      <select id="granularity" class="selectpicker form-control" required>
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                        <option value="months">Months</option>
+                      </select>
+                    </div>
+                    <div class="col mt-2 pl-0">
+                      <input class="form-control" type="number" min="1" value="1" id="granularity-value" required>
+                      <div class="invalid-feedback text-muted">
+                        Choose a positive number
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <hr class="my-0 mr-4 ml-4">
+
+            <div class="card-body">
+              <h5 class="card-title">Data Analysis</h5>
+
+              <div class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputEmail1">Mode</label>
+                <div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="check-mode" id="check-default"
+                      value="default" checked>
+                    <label class="form-check-label" for="check-default">Default</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="check-mode" id="check-parametric"
+                      value="parametric">
+                    <label class="form-check-label" for="check-parametric">Parametric</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Pairwise Comparisons</label>
+                <div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="inlineCheckbox5" value="cross type"
+                      name="check-pairwise-comparisons">
+                    <label class="form-check-label" for="inlineCheckbox5">Cross Type</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="inlineCheckbox6" value="all pairs"
+                      name="check-pairwise-comparisons">
+                    <label class="form-check-label" for="inlineCheckbox6">All Pairs</label>
+                  </div>
+                </div>
+                <div id="div-pairwise-comparisons">
+                </div>
+              </div>
+
+              <div id="div-correlation-type" class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Correlation Type</label>
+                <select id="correlation-type" class="selectpicker form-control" multiple data-actions-box="true">
+                  <option value="tuples">Tuples</option>
+                  <option value="temporal">Temporal</option>
+                </select>
+                
+              </div>
+
+              <div id="div-correlation" class="form-group">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Correlation</label>
+                <select id="correlation" class="selectpicker form-control" multiple data-actions-box="true">
+                  <option value="pearson">Pearson</option>
+                  <option value="kullback-leibler">Kullback-Leibler</option>
+                  <option value="dcca">DCCA</option>
+                  <option value="dcca-ln">DCCA-ln</option>
+                </select>
+              </div>
+
+              <div class="form-group mb-0">
+                <label class="text-dark font-weight-bold" for="exampleInputPassword1">PCA</label>
+                <div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="check-pca" value="pca">
+                    <label class="form-check-label" for="inlineCheckbox5">Show Statistics</label>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <hr class="my-1 mr-4 ml-4">
+
+            <div class="card-body">
+              <button id="run-btn" class="btn btn-info btn-block text-white" type="submit">Run Query</button>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <div class="col-sm-8">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Visualization</h5>
+            <p class="card-text">Where we will have various graphs</p>
+
+            <div id="line_chart"></div>
+
+            <div id="heat_map"></div>
+
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!--<div>Ícones feitos por <a href="https://www.flaticon.com/br/autores/vectors-market" title="Vectors Market">Vectors Market</a> from <a href="https://www.flaticon.com/br/" title="Flaticon">www.flaticon.com</a></div>-->
+  <!--<script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>-->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+  <script src="{{url_for('static', filename='index.js')}}"></script>
+
+</body>
+
+</html>

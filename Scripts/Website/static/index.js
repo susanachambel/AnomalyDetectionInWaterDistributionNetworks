@@ -19,6 +19,13 @@ function doWork(data) {
 }
 
 function callbackFunc(data, status) {
-    console.log(data);
-    alert("Data: " + data + "\nStatus: " + status);
+
+
+    var data_json = JSON.parse(data)
+
+    data_jason['col 1']
+
+    console.log(data_json)
+
+    //alert("Data: " + data + "\nStatus: " + status);
 }

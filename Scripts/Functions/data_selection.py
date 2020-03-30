@@ -8,6 +8,7 @@ Created on Tue Feb 26 12:12:48 2020
 import pandas as pd
 
 
+
 """
     1. Converts the dates from string to datatime
     2. Transforms the date column as index
