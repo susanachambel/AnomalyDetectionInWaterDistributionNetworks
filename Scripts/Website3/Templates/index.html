@@ -78,7 +78,7 @@
               <h5 class="card-title">Target Time Series</h5>
 
               <div class="form-group ">
-                <label class="text-dark font-weight-bold" for="exampleInputEmail1">Source</label>
+                <label class="text-dark font-weight-bold" for="source">Source</label>
                 <select id="source" class="selectpicker form-control" title="Nothing selected" required>
                   <option value="infraquinta">Infraquinta</option>
                   <option value="barreiro">Barreiro</option>
@@ -87,17 +87,17 @@
               </div>
 
               <div class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Focus</label>
+                <label class="text-dark font-weight-bold">Focus</label>
                 <div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="real"
+                    <input class="form-check-input" type="checkbox" id="focus-real" value="real"
                       name="check-focus">
-                    <label class="form-check-label" for="inlineCheckbox1">Real</label>
+                    <label class="form-check-label" for="focus-real">Real</label>
                   </div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="simulated"
+                    <input class="form-check-input" type="checkbox" id="focus-simulated" value="simulated"
                       name="check-focus">
-                    <label class="form-check-label" for="inlineCheckbox2">Simulated</label>
+                    <label class="form-check-label" for="focus-simulated">Simulated</label>
                   </div>
                 </div>
                 <div id="div-focus">
@@ -105,17 +105,17 @@
               </div>
 
               <div class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Sensor Group</label>
+                <label class="text-dark font-weight-bold">Sensor Group</label>
                 <div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="sensor-group-1" value="telemanagement"
+                    <input class="form-check-input" type="checkbox" id="sensor-group-telemanagement" value="telemanagement"
                       name="check-sensor-group">
-                    <label class="form-check-label" for="sensor-group-1">Telemanagement</label>
+                    <label class="form-check-label" for="sensor-group-telemanagement">Telemanagement</label>
                   </div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="sensor-group-2" value="telemetry"
+                    <input class="form-check-input" type="checkbox" id="sensor-group-telemetry" value="telemetry"
                       name="check-sensor-group">
-                    <label class="form-check-label" for="sensor-group-2">Telemetry</label>
+                    <label class="form-check-label" for="sensor-group-telemetry">Telemetry</label>
                   </div>
                 </div>
                 <div id="div-sensor-group">
@@ -123,7 +123,7 @@
               </div>
 
               <div id="div-sensor-type" class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Sensor Type</label>
+                <label class="text-dark font-weight-bold" for="sensor-type">Sensor Type</label>
                 <select id="sensor-type" class="selectpicker form-control" multiple data-actions-box="true">
                   <option value="flow">Flow</option>
                   <option value="pressure">Pressure</option>
@@ -131,20 +131,20 @@
               </div>
 
               <div id="div-sensor-name" class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Sensor Name</label>
+                <label class="text-dark font-weight-bold" for="sensor-name">Sensor Name</label>
                 <select id="sensor-name" class="selectpicker form-control" data-live-search="true" multiple
                   data-actions-box="true" multiple data-selected-text-format="count > 5">
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Date Range</label>
-                <input id="daterange" class="form-control" type="text" name="daterange"
+                <label class="text-dark font-weight-bold" for="date-range">Date Range</label>
+                <input id="date-range" class="form-control" type="text" name="date-range"
                   value="01/06/2017 - 15/06/2017" />
               </div>
 
               <div id="div-calendar" class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Calendar</label>
+                <label class="text-dark font-weight-bold" for="calendar">Calendar</label>
                 <select id="calendar" class="selectpicker form-control" data-live-search="true" multiple
                   data-actions-box="true">
                   <option value="monday" data-tokens="Weekday">Monday</option>
@@ -158,7 +158,7 @@
               </div>
 
               <div class="form-group mb-2">
-                <label class="mb-0 text-dark font-weight-bold" for="granularity-value">Granularity</label>
+                <label class="mb-0 text-dark font-weight-bold" for="granularity">Granularity</label>
                 <div class="container-fluid pl-0 pr-0">
                   <div class="row ml-0">
                     <div class="col mt-2 pl-0">
@@ -187,7 +187,7 @@
               <h5 class="card-title">Data Analysis</h5>
 
               <div class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputEmail1">Mode</label>
+                <label class="text-dark font-weight-bold">Mode</label>
                 <div>
                   <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="check-mode" id="check-default" value="default"
@@ -203,48 +203,41 @@
               </div>
 
               <div class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Pairwise Comparisons</label>
+                <label class="text-dark font-weight-bold">Pairwise Comparisons</label>
                 <div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="inlineCheckbox5" value="cross type"
+                    <input class="form-check-input" type="radio" id="check-all-pairs" value="all pairs"
                       name="check-pairwise-comparisons">
-                    <label class="form-check-label" for="inlineCheckbox5">Cross Type</label>
+                    <label class="form-check-label" for="check-all-pairs" checked>All Pairs</label>
                   </div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="inlineCheckbox6" value="all pairs"
+                    <input class="form-check-input" type="radio" id="check-cross-type" value="cross type"
                       name="check-pairwise-comparisons">
-                    <label class="form-check-label" for="inlineCheckbox6">All Pairs</label>
+                    <label class="form-check-label" for="check-cross-type">Cross Type</label>
                   </div>
-                </div>
-                <div id="div-pairwise-comparisons">
                 </div>
               </div>
 
               <div id="div-correlation-type" class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Correlation Type</label>
+                <label class="text-dark font-weight-bold" for="correlation-type">Correlation Type</label>
                 <select id="correlation-type" class="selectpicker form-control" multiple data-actions-box="true">
                   <option value="tuples">Tuples</option>
                   <option value="temporal">Temporal</option>
                 </select>
-
               </div>
 
               <div id="div-correlation" class="form-group">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">Correlation</label>
+                <label class="text-dark font-weight-bold" for="correlation">Correlation</label>
                 <select id="correlation" class="selectpicker form-control" multiple data-actions-box="true">
-                  <option value="pearson">Pearson</option>
-                  <option value="kullback-leibler">Kullback-Leibler</option>
-                  <option value="dcca">DCCA</option>
-                  <option value="dcca-ln">DCCA-ln</option>
                 </select>
               </div>
 
               <div class="form-group mb-0">
-                <label class="text-dark font-weight-bold" for="exampleInputPassword1">PCA</label>
+                <label class="text-dark font-weight-bold">PCA</label>
                 <div>
                   <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" name="check-pca" value="pca">
-                    <label class="form-check-label" for="inlineCheckbox5">Show Statistics</label>
+                    <input id="pca" class="form-check-input" type="checkbox" name="check-pca" value="pca">
+                    <label class="form-check-label" for="pca">Show Statistics</label>
                   </div>
                 </div>
               </div>

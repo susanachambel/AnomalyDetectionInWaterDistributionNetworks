@@ -47,14 +47,6 @@ window.onload = function () {
         });
     });
 
-    document.querySelectorAll("input[name=check-pairwise-comparisons]").forEach(box => {
-        box.addEventListener("change", function () {
-            if (document.getElementById("form-target").classList.contains('was-validated') === true) {
-                validate_check_box("pairwise-comparisons", 1);
-            };
-        });
-    });
-
     document.getElementById("sensor-type").addEventListener("change", function () {
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             validate_selection("sensor-type", 1);
@@ -78,6 +70,7 @@ window.onload = function () {
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             validate_selection("correlation-type", 1);
         };
+        update_correlation();
     });
 
     document.getElementById("correlation").addEventListener("change", function () {
@@ -92,7 +85,6 @@ window.onload = function () {
 function perform_manual_validation(){
     validate_check_box("focus", 1);
     validate_check_box("sensor-group", 1);
-    validate_check_box("pairwise-comparisons", 1);
     validate_selection("sensor-type", 1);
     validate_selection("sensor-name", 2);
     validate_selection("calendar", 1);
@@ -101,7 +93,7 @@ function perform_manual_validation(){
 }
 
 function get_init_json() {
-    console.log("hello");
+    console.log("get_init_json");
     var data = {
         name: "json"
     };
@@ -110,13 +102,11 @@ function get_init_json() {
 
 function receive_init_json(data, status) {
     var data_json = JSON.parse(data);
-
     wmes = {
         infraquinta: data_json['infraquinta'],
         barreiro: data_json['barreiro'],
         beja: data_json['beja']
     };
-
     init_form("infraquinta");
 };
 
@@ -334,6 +324,47 @@ function dim(name) {
     }
 }
 
+function update_correlation(){
+
+    selection = $('#correlation-type').val();
+    correlation_temporal = [["dcca", "DCCA"], ["dcca-ln", "DCCA-ln"]];
+    correlation_tuples = [["pearson", "Pearson"], ["kullback-leibler", "Kullback-Leibler"]];
+    
+    if(selection.includes("tuples")){
+        correlation_tuples.forEach(correlation => {
+            if( ($("#correlation option[value='" + correlation[0] + "']").length == 0)){
+               option = '<option data-subtext="Tuples" data-tokens="Tuples" value="' + correlation[0] + '">' + correlation[1] + '</option>';
+               $('#correlation').append(option);
+            };
+        });      
+    }else{
+        correlation_tuples.forEach(correlation => {
+            if( ($("#correlation option[value='" + correlation[0] + "']").length > 0)){
+                $('#correlation').find('[value=' + correlation[0] + ']').remove();
+            };
+        });
+    }
+
+    if(selection.includes("temporal")){
+        correlation_temporal.forEach(correlation => {
+            if( ($("#correlation option[value='" + correlation[0] + "']").length == 0)){
+               option = '<option data-subtext="Temporal" data-tokens="Temporal" value="' + correlation[0] + '">' + correlation[1] + '</option>';
+               $('#correlation').append(option);
+            };
+        });      
+    }else{
+        correlation_temporal.forEach(correlation => {
+            if( ($("#correlation option[value='" + correlation[0] + "']").length > 0)){
+                $('#correlation').find('[value=' + correlation[0] + ']').remove();
+            };
+        });
+    }  
+
+    $('#correlation').selectpicker('refresh');
+    $('#correlation').selectpicker('render');
+}
+
+
 function submit() {
     var data = {
         name: "form"
@@ -390,7 +421,7 @@ function validate_check_box(field, length) {
 };
 
 /*
-$('input[name="daterange"]').on('apply.daterangepicker', function (ev, picker) {
+$('input[name="date-range"]').on('apply.daterangepicker', function (ev, picker) {
     console.log(picker.startDate.format('DD-MM-YYYY'));
     console.log(picker.endDate.format('DD-MM-YYYY'));
 });
@@ -460,24 +491,24 @@ function create_heat_map() {
 
 function init_form(wme) {
     update_form(wme);
-    $('#correlation-type').selectpicker('refresh');
-    $('#correlation-type').selectpicker('selectAll');
-    $('#correlation').selectpicker('refresh');
-    $('#correlation').selectpicker('selectAll');
+    create_date_range_picker("01/06/2017", "08/06/2017", "01/01/2017", "31/12/2017", 7);
     $('#calendar').selectpicker('refresh');
     $('#calendar').selectpicker('selectAll');
     $('#granularity').selectpicker('val', 'hours');
-    $("[name='check-pairwise-comparisons'").prop("checked", true);
-    $("[name='check-pca'").prop("checked", true);
-    document.getElementById("check-default").checked = true;
     document.getElementById("granularity-value").value = 1;
-    create_date_range_picker("01/06/2017", "08/06/2017", "01/01/2017", "31/12/2017", 7);
+    document.getElementById("check-default").checked = true;
+    document.getElementById("check-all-pairs").checked = true;
+    $('#correlation-type').selectpicker('refresh');
+    $('#correlation-type').selectpicker('selectAll');  
+    update_correlation();
+    $('#correlation').selectpicker('selectAll');
+    $("[name='check-pca'").prop("checked", true);
 };
 
 
 function create_date_range_picker(startDate, endDate, minDate, maxDate, maxSpan) {
     $(function () {
-        $('input[name="daterange"]').daterangepicker({
+        $('input[name="date-range"]').daterangepicker({
             locale: {
                 format: 'DD/MM/YYYY'
             },
@@ -490,7 +521,7 @@ function create_date_range_picker(startDate, endDate, minDate, maxDate, maxSpan)
                 "days": maxSpan
             }
         }, function (start, end, label) {
-            console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+            //console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
         });
     });
 };
