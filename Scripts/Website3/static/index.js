@@ -1,19 +1,15 @@
+var wmes = 0;
+var sensor_list = 0;
+var focus = 0;
+var group = 0;
+var type = 0;
+
 window.onload = function () {
 
     var forms = document.getElementsByClassName('needs-validation');
     var validation = Array.prototype.filter.call(forms, function (form) {
         form.addEventListener('submit', function (event) {
-
-            validate_check_box("focus", 1);
-            validate_check_box("sensor-group", 1);
-            validate_check_box("pairwise-comparisons", 1);
-
-            validate_selection("sensor-type", 1);
-            validate_selection("sensor-name", 2);
-            validate_selection("calendar", 1);
-            validate_selection("correlation-type", 1);
-            validate_selection("correlation", 1);
-
+            perform_manual_validation();
             if (form.checkValidity() === false) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -22,24 +18,15 @@ window.onload = function () {
                 submit();
                 form.classList.remove('was-validated');
             };
-
         }, false);
     });
 
     document.getElementById("source").addEventListener("change", function () {
-        switch (this.value) {
-            case "infraquinta":
-                activate_infraquinta();
-                break;
-            case "beja":
-                activate_beja();
-                break;
-            case "barreiro":
-                activate_barreiro();
-                break;
-            default:
-                break;
-        };
+        update_form(this.value);
+        if (document.getElementById("form-target").classList.contains('was-validated') === true) {
+            perform_manual_validation();
+            form.checkValidity();
+        };     
     });
 
     document.querySelectorAll("input[name=check-focus]").forEach(box => {
@@ -47,6 +34,7 @@ window.onload = function () {
             if (document.getElementById("form-target").classList.contains('was-validated') === true) {
                 validate_check_box("focus", 1);
             };
+            update_sensors(false, false);
         });
     });
 
@@ -55,6 +43,7 @@ window.onload = function () {
             if (document.getElementById("form-target").classList.contains('was-validated') === true) {
                 validate_check_box("sensor-group", 1);
             };
+            update_sensors(false, false);
         });
     });
 
@@ -70,6 +59,7 @@ window.onload = function () {
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             validate_selection("sensor-type", 1);
         };
+        update_sensors(false, false);
     });
 
     document.getElementById("sensor-name").addEventListener("change", function () {
@@ -85,10 +75,6 @@ window.onload = function () {
     });
 
     document.getElementById("correlation-type").addEventListener("change", function () {
-        //var selected = [];
-        //selected = $('#correlation-type').val();
-        //console.log(selected); //Get the multiple values selected in an array
-        //console.log(selected.length); //Length of the array
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             validate_selection("correlation-type", 1);
         };
@@ -101,8 +87,18 @@ window.onload = function () {
     });
 
     get_init_json();
-    activate_infraquinta();
 };
+
+function perform_manual_validation(){
+    validate_check_box("focus", 1);
+    validate_check_box("sensor-group", 1);
+    validate_check_box("pairwise-comparisons", 1);
+    validate_selection("sensor-type", 1);
+    validate_selection("sensor-name", 2);
+    validate_selection("calendar", 1);
+    validate_selection("correlation-type", 1);
+    validate_selection("correlation", 1);
+}
 
 function get_init_json() {
     console.log("hello");
@@ -115,13 +111,228 @@ function get_init_json() {
 function receive_init_json(data, status) {
     var data_json = JSON.parse(data);
 
-    var infraquinta = data_json['infraquinta']
-    var barreiro = data_json['barreiro']
-    var beja = data_json['beja']
+    wmes = {
+        infraquinta: data_json['infraquinta'],
+        barreiro: data_json['barreiro'],
+        beja: data_json['beja']
+    };
 
-    console.log(data_json)
+    init_form("infraquinta");
 };
 
+
+function update_form(wme) {
+
+    $('#source').selectpicker('val', wme);
+
+    switch (wme) {
+        case "infraquinta":
+            sensor_list = wmes.infraquinta;
+            break;
+        case "barreiro":
+            sensor_list = wmes.barreiro;
+            break;
+        case "beja":
+            sensor_list = wmes.beja;
+            break;
+    }
+
+    focus = {
+        real: false,
+        simulated: false
+    };
+    group = {
+        telemanagement: false,
+        telemetry: false
+    };
+    type = {
+        flow: false,
+        pressure: false
+    };
+
+    console.log(sensor_list)
+
+    for (var key in sensor_list) {
+        if (!sensor_list.hasOwnProperty(key)) {
+            continue;
+        };
+
+        var sensor = sensor_list[key];
+
+        switch (sensor["focus"]) {
+            case "real":
+                focus.real = true;
+                break;
+            case "simulated":
+                focus.simulated = true;
+                break;
+        };
+
+        switch (sensor["group"]) {
+            case "telemanagement":
+                group.telemanagement = true;
+                break;
+            case "telemetry":
+                group.telemetry = true;
+                break;
+        };
+
+        switch (sensor["type"]) {
+            case "flow":
+                type.flow = true;
+                break;
+            case "pressure":
+                type.pressure = true;
+                break;
+        };
+    };
+
+    update_selections_checkboxes();
+    update_sensors(true, true);
+}
+
+function update_selections_checkboxes() {
+
+    $("[value='real'][name='check-focus']").prop("checked", false);
+    if (focus.real == false) {
+        $("[value='real'][name='check-focus']").prop("disabled", true);
+    } else {
+        $("[value='real'][name='check-focus']").prop("disabled", false);
+        $("[value='real'][name='check-focus']").prop("checked", true);
+    }
+
+    $("[value='simulated'][name='check-focus']").prop("checked", false);
+    if (focus.simulated == false) {
+        $("[value='simulated'][name='check-focus']").prop("disabled", true);
+    } else {
+        $("[value='simulated'][name='check-focus']").prop("disabled", false);
+        $("[value='simulated'][name='check-focus']").prop("checked", true);
+    }
+
+    $("[value='telemetry'][name='check-sensor-group']").prop("checked", false);
+    if (group.telemetry == false) {
+        $("[value='telemetry'][name='check-sensor-group']").prop("disabled", true);
+    } else {
+        $("[value='telemetry'][name='check-sensor-group']").prop("disabled", false);
+        $("[value='telemetry'][name='check-sensor-group']").prop("checked", true);
+    }
+
+    $("[value='telemanagement'][name='check-sensor-group']").prop("checked", false);
+    if (group.telemanagement == false) {
+        $("[value='telemanagement'][name='check-sensor-group']").prop("disabled", true);
+    } else {
+        $("[value='telemanagement'][name='check-sensor-group']").prop("disabled", false);
+        $("[value='telemanagement'][name='check-sensor-group']").prop("checked", true);
+    }
+
+    $('#sensor-type').selectpicker('deselectAll');
+    if (type.flow == false) {
+        $('#sensor-type option[value=flow]').prop("disabled", true);
+    } else {
+        $('#sensor-type option[value=flow]').prop("disabled", false);
+        $('#sensor-type option[value=flow]').prop("selected", true);
+    }
+    if (type.pressure == false) {
+        $('#sensor-type option[value=pressure]').prop("disabled", true);
+    } else {
+        $('#sensor-type option[value=pressure]').prop("disabled", false);
+        $('#sensor-type option[value=pressure]').prop("selected", true);
+    }
+    $('#sensor-type').selectpicker('refresh');
+    $('#sensor-type').selectpicker('render');
+}
+
+function update_sensors(delete_sensors, select_all) {
+
+    if (delete_sensors) {
+        $('#sensor-name').empty();
+        $('#sensor-name').selectpicker('refresh');
+        $('#sensor-name').selectpicker('render');
+    }
+
+    for (var key in sensor_list) {
+        if (!sensor_list.hasOwnProperty(key)) {
+            continue;
+        };
+
+        var sensor = sensor_list[key];
+        var approved = true;
+
+        switch (sensor["focus"]) {
+            case "real":
+                if ($("[name='check-focus'][value='real']:checked").length == 0) {
+                    approved = false;
+                }
+                break;
+            case "simulated":
+                if ($("[name='check-focus'][value='simulated']:checked").length == 0) {
+                    approved = false;
+                }
+                break;
+        };
+
+        switch (sensor["group"]) {
+            case "telemanagement":
+                if ($("[name='check-sensor-group'][value='telemanagement']:checked").length == 0) {
+                    approved = false;
+                }
+                break;
+            case "telemetry":
+                if ($("[name='check-sensor-group'][value='telemetry']:checked").length == 0) {
+                    approved = false;
+                }
+                break;
+        };
+
+        switch (sensor["type"]) {
+            case "flow":
+                if ($("#sensor-type option[value=flow]:selected").length == 0) {
+                    approved = false;
+                }
+                break;
+            case "pressure":
+                if ($("#sensor-type option[value=pressure]:selected").length == 0) {
+                    approved = false;
+                }
+                break;
+        };
+
+        if (approved && ($("#sensor-name option[value='" + key + "']").length == 0)) {
+            var data_tokens = sensor["focus"] + " " + sensor["group"] + " " + sensor["type"];
+            var data_subtext = dim(sensor["focus"]) + " • " + dim(sensor["group"]) + " • " + dim(sensor["type"]);
+            var option = '<option value="' + key + '" data-subtext="' + data_subtext + '" data-tokens="' + data_tokens + '">' + sensor["name"] + '</option>';
+            $('#sensor-name').append(option);
+        } else {
+            if ((!approved) && ($("#sensor-name option[value='" + key + "']").length != 0)) {
+                $('#sensor-name').find('[value=' + key + ']').remove();
+            }
+        }
+    };
+
+    $('#sensor-name').selectpicker('refresh');
+    $('#sensor-name').selectpicker('render');
+
+    if (select_all) {
+        $('#sensor-name').selectpicker('selectAll');
+    }
+}
+
+function dim(name) {
+    switch (name) {
+        case "real":
+            return "real";
+        case "simulated":
+            return "simu";
+        case "telemanagement":
+            return "tlmg";
+        case "telemetry":
+            return "tlmt";
+        case "flow":
+            return "flow";
+        case "pressure":
+            return "press";
+    }
+}
 
 function submit() {
     var data = {
@@ -178,22 +389,12 @@ function validate_check_box(field, length) {
     };
 };
 
-
-//$("#cities").html('<option>city1</option><option>city2</option>');
-
-
 /*
 $('input[name="daterange"]').on('apply.daterangepicker', function (ev, picker) {
     console.log(picker.startDate.format('DD-MM-YYYY'));
     console.log(picker.endDate.format('DD-MM-YYYY'));
 });
 */
-
-
-//$('#correlation-type').prop('disabled', true);
-
-
-
 
 function create_line_chart(lc_data) {
     var config = {
@@ -209,7 +410,7 @@ function create_line_chart(lc_data) {
     var data = [];
 
     for (sensor in lc_data) {
-        console.log(sensor);
+        
         var x = Object.keys(lc_data[sensor]);
         var y = Object.values(lc_data[sensor]);
 
@@ -256,49 +457,25 @@ function create_heat_map() {
     Plotly.newPlot('heat_map', data, layout, config);
 };
 
-function activate_infraquinta() {
 
-    $('#source').selectpicker('val', 'infraquinta');
-
+function init_form(wme) {
+    update_form(wme);
     $('#correlation-type').selectpicker('refresh');
     $('#correlation-type').selectpicker('selectAll');
     $('#correlation').selectpicker('refresh');
     $('#correlation').selectpicker('selectAll');
-    $('#sensor-type').selectpicker('refresh');
-    $('#sensor-type').selectpicker('selectAll');
-    $('#sensor-name').selectpicker('refresh');
-    $('#sensor-name').selectpicker('selectAll');
     $('#calendar').selectpicker('refresh');
     $('#calendar').selectpicker('selectAll');
-    
     $('#granularity').selectpicker('val', 'hours');
-
-    $("[name='check-focus'").prop( "checked", true );
-    $("[name='check-focus'").prop( "disabled", false );
-    $("[name='check-sensor-group'").prop( "checked", true );
-    $("[name='check-sensor-group'").prop( "disabled", false );
-    $("[name='check-pairwise-comparisons'").prop( "checked", true );
-    $("[name='check-pca'").prop( "checked", true );
-
+    $("[name='check-pairwise-comparisons'").prop("checked", true);
+    $("[name='check-pca'").prop("checked", true);
     document.getElementById("check-default").checked = true;
-
     document.getElementById("granularity-value").value = 1;
     create_date_range_picker("01/06/2017", "08/06/2017", "01/01/2017", "31/12/2017", 7);
 };
 
-function activate_barreiro() {
 
-    console.log("barreiro");
-    //$("#div-source").html('<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="real"><label class="form-check-label" for="inlineCheckbox1">Real</label></div>');
-}
-
-function activate_beja() {
-
-    console.log("beja");
-
-};
-
-function create_date_range_picker(startDate, endDate, minDate, maxDate, maxSpan){
+function create_date_range_picker(startDate, endDate, minDate, maxDate, maxSpan) {
     $(function () {
         $('input[name="daterange"]').daterangepicker({
             locale: {
@@ -317,8 +494,6 @@ function create_date_range_picker(startDate, endDate, minDate, maxDate, maxSpan)
         });
     });
 };
-
-
 
 
 function deactivate_form() {
@@ -368,6 +543,22 @@ function activate_form() {
     $('#correlation-type').selectpicker('refresh');
     $('#correlation').prop('disabled', false);
     $('#correlation').selectpicker('refresh');
+
+    if (!focus.real) {
+        $("[value='real'][name='check-focus']").prop("disabled", true);
+    }
+
+    if (!focus.simulated) {
+        $("[value='simulated'][name='check-focus']").prop("disabled", true);
+    }
+
+    if (!group.telemanagement) {
+        $("[value='telemanagement'][name='check-sensor-group']").prop("disabled", true);
+    }
+
+    if (!group.telemetry) {
+        $("[value='telemetry'][name='check-sensor-group']").prop("disabled", true);
+    }
 
     $("#btn-spinner").remove();
     $("#run-btn").html(
