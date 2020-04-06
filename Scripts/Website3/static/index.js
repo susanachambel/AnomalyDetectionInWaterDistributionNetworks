@@ -14,11 +14,37 @@ window.onload = function () {
                 event.preventDefault();
                 event.stopPropagation();
                 form.classList.add('was-validated');
+                $('#collapse-target').collapse('show');
+                $('#collapse-analysis').collapse('show');
             } else {
                 submit();
-                form.classList.remove('was-validated');
+                form.classList.remove('was-validated');    
             };
         }, false);
+    });
+
+    add_event_listener_collapsers("target", false);
+    add_event_listener_collapsers("analysis", false);
+    add_event_listener_collapsers("visualization-settings", false);
+    add_event_listener_collapsers("line_chart", true);
+    add_event_listener_collapsers("heat_map", true);
+
+    document.getElementById("btn-redo-analysis-settings").addEventListener("click", function(){ 
+        init_form($('#source').selectpicker('val'));
+        if (document.getElementById("form-target").classList.contains('was-validated') === true) {
+            perform_manual_validation();
+            form.checkValidity();
+        };
+        $('#collapse-target').collapse('show');
+        $('#collapse-analysis').collapse('show');
+    });
+
+    document.getElementById("btn-collapse-visualization").addEventListener("click", function(){  
+        if($('#btn-collapse-visualization').prop('name') == "not-active"){
+            compress_expand_visualization("compress");
+        } else {
+            compress_expand_visualization("expand");
+        };
     });
 
     document.getElementById("source").addEventListener("change", function () {
@@ -26,7 +52,7 @@ window.onload = function () {
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             perform_manual_validation();
             form.checkValidity();
-        };     
+        };
     });
 
     document.querySelectorAll("input[name=check-focus]").forEach(box => {
@@ -82,7 +108,42 @@ window.onload = function () {
     get_init_json();
 };
 
-function perform_manual_validation(){
+function add_event_listener_collapsers(name, is_chart){
+    $('#collapse-' + name).on('hidden.bs.collapse', function () {
+        $("#btn-collapse-" + name).html('<i class="fa fa-chevron-down"></i>');
+        document.getElementById('btn-collapse-' + name).title = 'Show';  
+        if (is_chart){
+            Plotly.Plots.resize(name);
+        };
+    });
+    $('#collapse-' + name).on('shown.bs.collapse', function () {
+        $("#btn-collapse-" + name).html('<i class="fa fa-chevron-up"></i>');
+        document.getElementById('btn-collapse-' + name).title = 'Hide';
+        if (is_chart){
+            Plotly.Plots.resize(name);
+        };
+    });
+};
+
+function compress_expand_visualization(type){
+    if (type == "compress") {
+        $('#btn-collapse-visualization').prop('name', 'active');
+        document.getElementById('row-form').className="col-sm-4";
+        document.getElementById('row-visualization').className="col-sm-8";
+        document.getElementById('btn-collapse-visualization').title = 'Expand';
+        $("#btn-collapse-visualization").html('<i class="fa fa-expand"></i>');
+    } else {
+        $('#btn-collapse-visualization').prop('name', "not-active");
+        document.getElementById('row-form').className="col-sm-2";
+        document.getElementById('row-visualization').className="col-sm-10";
+        document.getElementById('btn-collapse-visualization').title = 'Compress';
+        $("#btn-collapse-visualization").html('<i class="fa fa-compress"></i>');
+    };
+    Plotly.Plots.resize("line_chart");
+    Plotly.Plots.resize("heat_map");
+};
+
+function perform_manual_validation() {
     validate_check_box("focus", 1);
     validate_check_box("sensor-group", 1);
     validate_selection("sensor-type", 1);
@@ -90,12 +151,12 @@ function perform_manual_validation(){
     validate_selection("calendar", 1);
     validate_selection("correlation-type", 1);
     validate_selection("correlation", 1);
-}
+};
 
 function get_init_json() {
     console.log("get_init_json");
     var data = {
-        name: "json"
+        request_type: "json"
     };
     $.post("receiver", data, receive_init_json);
 };
@@ -324,41 +385,47 @@ function dim(name) {
     }
 }
 
-function update_correlation(){
+function update_correlation() {
 
     selection = $('#correlation-type').val();
-    correlation_temporal = [["dcca", "DCCA"], ["dcca-ln", "DCCA-ln"]];
-    correlation_tuples = [["pearson", "Pearson"], ["kullback-leibler", "Kullback-Leibler"]];
-    
-    if(selection.includes("tuples")){
+    correlation_temporal = [
+        ["dcca", "DCCA"],
+        ["dcca-ln", "DCCA-ln"]
+    ];
+    correlation_tuples = [
+        ["pearson", "Pearson"],
+        ["kullback-leibler", "Kullback-Leibler"]
+    ];
+
+    if (selection.includes("tuples")) {
         correlation_tuples.forEach(correlation => {
-            if( ($("#correlation option[value='" + correlation[0] + "']").length == 0)){
-               option = '<option data-subtext="Tuples" data-tokens="Tuples" value="' + correlation[0] + '">' + correlation[1] + '</option>';
-               $('#correlation').append(option);
+            if (($("#correlation option[value='" + correlation[0] + "']").length == 0)) {
+                option = '<option data-subtext="Tuples" data-tokens="Tuples" value="' + correlation[0] + '">' + correlation[1] + '</option>';
+                $('#correlation').append(option);
             };
-        });      
-    }else{
+        });
+    } else {
         correlation_tuples.forEach(correlation => {
-            if( ($("#correlation option[value='" + correlation[0] + "']").length > 0)){
+            if (($("#correlation option[value='" + correlation[0] + "']").length > 0)) {
                 $('#correlation').find('[value=' + correlation[0] + ']').remove();
             };
         });
     }
 
-    if(selection.includes("temporal")){
+    if (selection.includes("temporal")) {
         correlation_temporal.forEach(correlation => {
-            if( ($("#correlation option[value='" + correlation[0] + "']").length == 0)){
-               option = '<option data-subtext="Temporal" data-tokens="Temporal" value="' + correlation[0] + '">' + correlation[1] + '</option>';
-               $('#correlation').append(option);
+            if (($("#correlation option[value='" + correlation[0] + "']").length == 0)) {
+                option = '<option data-subtext="Temporal" data-tokens="Temporal" value="' + correlation[0] + '">' + correlation[1] + '</option>';
+                $('#correlation').append(option);
             };
-        });      
-    }else{
+        });
+    } else {
         correlation_temporal.forEach(correlation => {
-            if( ($("#correlation option[value='" + correlation[0] + "']").length > 0)){
+            if (($("#correlation option[value='" + correlation[0] + "']").length > 0)) {
                 $('#correlation').find('[value=' + correlation[0] + ']').remove();
             };
         });
-    }  
+    }
 
     $('#correlation').selectpicker('refresh');
     $('#correlation').selectpicker('render');
@@ -366,26 +433,56 @@ function update_correlation(){
 
 
 function submit() {
-    var data = {
-        name: "form"
-    };
-
+    
     deactivate_form();
 
+    $('#collapse-target').collapse('hide');
+    $('#collapse-analysis').collapse('hide');
+    $('#collapse-line_chart-section').collapse('hide');
+    $('#collapse-heat_map-section').collapse('hide');
+
+    window.scroll({
+        top: 0, 
+        left: 0, 
+        behavior: 'smooth'
+    });
+
+    var data = {
+        request_type: "form",  
+        source: $('#source').selectpicker('val'),
+        sensor_name: $('#sensor-name').selectpicker('val'),
+        date_range_min: $('#date-range').data('daterangepicker').startDate.format('DD-MM-YYYY'),
+        date_range_max: $('#date-range').data('daterangepicker').endDate.format('DD-MM-YYYY'),
+        calendar: $('#calendar').selectpicker('val'),
+        granularity_unit: $('#granularity').selectpicker('val'),   
+        granularity_frequence: document.getElementById("granularity-value").value,
+        mode: document.querySelector('input[name="check-mode"]:checked').value,
+        pairwise_comparisons: document.querySelector('input[name="check-pairwise-comparisons"]:checked').value,
+        correlation: $('#correlation').selectpicker('val'),
+        pca: document.getElementById("pca").checked  
+    }; 
     $.post("receiver", data, receive_data);
     event.preventDefault();
+
 };
 
 function receive_data(data, status) {
 
     var data_json = JSON.parse(data);
 
-    lc_data = data_json["line_chart"];
-    hm_data = data_json["heat_map"];
+    if (data_json.hasOwnProperty('line_chart')) {
+        create_line_chart(data_json["line_chart"]); 
+    }
 
-    create_line_chart(lc_data);
-    create_heat_map();
+    if (data_json.hasOwnProperty('heat_map')) {
+        create_heat_map(data_json["heat_map"]);
+    }
+  
     activate_form();
+
+    $('#collapse-visualization-settings-card').collapse('show');
+    compress_expand_visualization("expand");
+    $("#visualizaition-help-text-card-body").remove();
 };
 
 function validate_selection(field, length) {
@@ -434,14 +531,27 @@ function create_line_chart(lc_data) {
 
     var layout = {
         xaxis: {
-            rangeslider: {}
-        }
+            //rangeslider: {}
+        }, 
+        yaxis: {
+            title: {
+                text: 'Flow [m<sup>3</sup>/h] | Pressure [bar]',
+            }
+        },
+        legend: {"orientation": "h"},
+        margin: {
+            //l: 50,
+            //r: 50,
+            //b: 0,
+            t: 20,
+            //pad: 4
+          },
     };
 
     var data = [];
 
     for (sensor in lc_data) {
-        
+
         var x = Object.keys(lc_data[sensor]);
         var y = Object.values(lc_data[sensor]);
 
@@ -449,7 +559,9 @@ function create_line_chart(lc_data) {
         data.push(trace);
     };
 
-    Plotly.newPlot('line_chart', data, layout, config);
+    $('#collapse-line_chart-section').collapse('show');
+    $('#collapse-line_chart').collapse('show');
+    Plotly.newPlot('line_chart', data, layout, config);  
 };
 
 function create_trace(name, x, y) {
@@ -463,28 +575,40 @@ function create_trace(name, x, y) {
 };
 
 
-function create_heat_map() {
+function create_heat_map(hm_data) {
 
     var config = {
         responsive: true
     };
 
-    var layout = {};
+    var layout = {
+        margin: {
+            //l: 50,
+            //r: 50,
+            //b: 0,
+            t: 40,
+            //pad: 4
+          }
+    };
 
     var data = [{
         z: [
-            [1, null, 30],
-            [20, 1, 60],
-            [30, 60, 1]
+            [-1, 0.5, -0.5],
+            [0.3, 1, 0.8],
+            [-0.8, 0, -0.7]
         ],
-        x: ['Monday', 'Tuesday', 'Wednesday'],
-        y: ['Morning', 'Afternoon', 'Evening'],
-        colorscale: 'YIOrRd',
-        reversescale: true,
+        x: ['1<br>(R, TLMT, F)', '2<br>(R, TLMT, F)', '3<br>(R, TLMT, F)'],
+        y: ['1<br>(R, TLMT, F)', '2<br>(R, TLMT, F)', '3<br>(R, TLMT, F)'],
+        colorscale: 'RdBu',
+        //reversescale: true,
+        zmin: -1,
+        zmax: 1,
         type: 'heatmap',
         hoverongaps: false
     }];
-
+    
+    $('#collapse-heat_map-section').collapse('show');
+    $('#collapse-heat_map').collapse('show');
     Plotly.newPlot('heat_map', data, layout, config);
 };
 
@@ -499,7 +623,7 @@ function init_form(wme) {
     document.getElementById("check-default").checked = true;
     document.getElementById("check-all-pairs").checked = true;
     $('#correlation-type').selectpicker('refresh');
-    $('#correlation-type').selectpicker('selectAll');  
+    $('#correlation-type').selectpicker('selectAll');
     update_correlation();
     $('#correlation').selectpicker('selectAll');
     $("[name='check-pca'").prop("checked", true);
@@ -552,6 +676,15 @@ function deactivate_form() {
     $('#correlation-type').selectpicker('refresh');
     $('#correlation').prop('disabled', true);
     $('#correlation').selectpicker('refresh');
+
+    $(':button[type=button]').prop("disabled", true);
+
+    $('#form-visualization-settings input[type=checkbox]').prop("disabled", true);
+    $('#vis-sensor-type').prop("disabled", true);
+    $('#vis-sensor-type').selectpicker('refresh');
+    $('#vis-sensor-name').prop("disabled", true);
+    $('#vis-sensor-name').selectpicker('refresh');
+
 };
 
 function activate_form() {
@@ -591,9 +724,17 @@ function activate_form() {
         $("[value='telemetry'][name='check-sensor-group']").prop("disabled", true);
     }
 
+    $('#form-visualization-settings input[type=checkbox]').prop("disabled", false);
+    $('#vis-sensor-type').prop("disabled", false);
+    $('#vis-sensor-type').selectpicker('refresh');
+    $('#vis-sensor-name').prop("disabled", false);
+    $('#vis-sensor-name').selectpicker('refresh');
+
     $("#btn-spinner").remove();
     $("#run-btn").html(
         `Run Query`
     );
     $("#run-btn").prop("disabled", false);
+
+    $(':button[type=button]').prop("disabled", false);
 };

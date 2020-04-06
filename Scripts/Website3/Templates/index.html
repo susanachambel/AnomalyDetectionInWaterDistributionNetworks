@@ -71,177 +71,277 @@
 
   <div class="container-fluid">
     <div class="row pt-4 pb-3 pl-4 pr-4">
-      <div class="col-sm-4">
+      <div id="row-form" class="col-sm-4">
+
+        <div id="collapse-visualization-settings-card" class="collapse card mb-4">
+          <div class="card-header">
+            <p class="d-inline mr-0">Visualization Settings</p>
+            <button id="btn-redo-visualization-settings"
+              class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo">
+              <i class="fa fa-redo-alt"></i>
+            </button>
+          </div>
+          <form id="form-visualization-settings">
+
+            <div class="card-body">
+              <h5 class="card-title d-inline mr-1">Sensors</h5>
+              <button id="btn-collapse-visualization-settings"
+                class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle" type="button"
+                data-toggle="collapse" data-target="#collapse-visualization-settings" aria-expanded="false"
+                aria-controls="collapse-visualization-settings" title="Hide">
+                <i class="fa fa-chevron-up"></i>
+              </button>
+              <p class="card-text">Choose which sensors you want to see</p>
+
+              <div class="collapse show" id="collapse-visualization-settings" class="collapse">
+
+                <div class="form-group ">
+                  <label class="text-dark font-weight-bold">Focus</label>
+                  <div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="vis-focus-real" value="real"
+                        name="check-vis-focus">
+                      <label class="form-check-label" for="vis-focus-real">Real</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="vis-focus-simulated" value="simulated"
+                        name="check-vis-focus">
+                      <label class="form-check-label" for="vis-focus-simulated">Simulated</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="text-dark font-weight-bold">Sensor Group</label>
+                  <div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="vis-sensor-group-telemanagement"
+                        value="telemanagement" name="check-vis-sensor-group">
+                      <label class="form-check-label" for="vis-sensor-group-telemanagement">Telemanagement</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="vis-sensor-group-telemetry" value="telemetry"
+                        name="check-vis-sensor-group">
+                      <label class="form-check-label" for="vis-sensor-group-telemetry">Telemetry</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="div-vis-sensor-type" class="form-group">
+                  <label class="text-dark font-weight-bold" for="vis-sensor-type">Sensor Type</label>
+                  <select id="vis-sensor-type" class="selectpicker form-control" multiple data-actions-box="true">
+                    <option value="flow">Flow</option>
+                    <option value="pressure">Pressure</option>
+                  </select>
+                </div>
+
+                <div id="div-vis-sensor-name" class="form-group">
+                  <label class="text-dark font-weight-bold" for="vis-sensor-name">Sensor Name</label>
+                  <select id="vis-sensor-name" class="selectpicker form-control" data-live-search="true" multiple
+                    data-actions-box="true" multiple data-selected-text-format="count > 5">
+                  </select>
+                </div>
+
+              </div>
+            </div>
+          </form>
+
+        </div>
+
         <form id="form-target" class="needs-validation" novalidate>
           <div class="card mb-4">
+            <div class="card-header">
+              <p class="d-inline mr-0">Analysis Settings</p>
+              <button id="btn-redo-analysis-settings"
+                class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo">
+                <i class="fa fa-redo-alt"></i>
+              </button>
+            </div>
             <div class="card-body">
-              <h5 class="card-title">Target Time Series</h5>
 
-              <div class="form-group ">
-                <label class="text-dark font-weight-bold" for="source">Source</label>
-                <select id="source" class="selectpicker form-control" title="Nothing selected" required>
-                  <option value="infraquinta">Infraquinta</option>
-                  <option value="barreiro">Barreiro</option>
-                  <option value="beja">Beja</option>
-                </select>
-              </div>
+              <h5 class="card-title d-inline mr-1">Target Time Series</h5>
+              <button id="btn-collapse-target" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
+                type="button" data-toggle="collapse" data-target="#collapse-target" aria-expanded="false"
+                aria-controls="collapse-target" title="Hide">
+                <i class="fa fa-chevron-up"></i>
+              </button>
+              <p class="card-text mb-0">Choose the data</p>
 
-              <div class="form-group">
-                <label class="text-dark font-weight-bold">Focus</label>
-                <div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="focus-real" value="real"
-                      name="check-focus">
-                    <label class="form-check-label" for="focus-real">Real</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="focus-simulated" value="simulated"
-                      name="check-focus">
-                    <label class="form-check-label" for="focus-simulated">Simulated</label>
-                  </div>
+              <div class="collapse show" id="collapse-target">
+
+                <div class="form-group mt-3">
+                  <label class="text-dark font-weight-bold" for="source">Source</label>
+                  <select id="source" class="selectpicker form-control" title="Nothing selected" required>
+                    <option value="infraquinta">Infraquinta</option>
+                    <option value="barreiro">Barreiro</option>
+                    <option value="beja">Beja</option>
+                  </select>
                 </div>
-                <div id="div-focus">
-                </div>
-              </div>
 
-              <div class="form-group">
-                <label class="text-dark font-weight-bold">Sensor Group</label>
-                <div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="sensor-group-telemanagement" value="telemanagement"
-                      name="check-sensor-group">
-                    <label class="form-check-label" for="sensor-group-telemanagement">Telemanagement</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="sensor-group-telemetry" value="telemetry"
-                      name="check-sensor-group">
-                    <label class="form-check-label" for="sensor-group-telemetry">Telemetry</label>
-                  </div>
-                </div>
-                <div id="div-sensor-group">
-                </div>
-              </div>
-
-              <div id="div-sensor-type" class="form-group">
-                <label class="text-dark font-weight-bold" for="sensor-type">Sensor Type</label>
-                <select id="sensor-type" class="selectpicker form-control" multiple data-actions-box="true">
-                  <option value="flow">Flow</option>
-                  <option value="pressure">Pressure</option>
-                </select>
-              </div>
-
-              <div id="div-sensor-name" class="form-group">
-                <label class="text-dark font-weight-bold" for="sensor-name">Sensor Name</label>
-                <select id="sensor-name" class="selectpicker form-control" data-live-search="true" multiple
-                  data-actions-box="true" multiple data-selected-text-format="count > 5">
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label class="text-dark font-weight-bold" for="date-range">Date Range</label>
-                <input id="date-range" class="form-control" type="text" name="date-range"
-                  value="01/06/2017 - 15/06/2017" />
-              </div>
-
-              <div id="div-calendar" class="form-group">
-                <label class="text-dark font-weight-bold" for="calendar">Calendar</label>
-                <select id="calendar" class="selectpicker form-control" data-live-search="true" multiple
-                  data-actions-box="true">
-                  <option value="monday" data-tokens="Weekday">Monday</option>
-                  <option value="tuesday" data-tokens="Weekday">Tuesday</option>
-                  <option value="wednesday" data-tokens="Weekday">Wednesday</option>
-                  <option value="thursday" data-tokens="Weekday">Thursday</option>
-                  <option value="friday" data-tokens="Weekday">Friday</option>
-                  <option value="saturday" data-tokens="Weekend">Saturday</option>
-                  <option value="sunday" data-tokens="Weekend">Sunday</option>
-                </select>
-              </div>
-
-              <div class="form-group mb-2">
-                <label class="mb-0 text-dark font-weight-bold" for="granularity">Granularity</label>
-                <div class="container-fluid pl-0 pr-0">
-                  <div class="row ml-0">
-                    <div class="col mt-2 pl-0">
-                      <select id="granularity" class="selectpicker form-control" required>
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                        <option value="days">Days</option>
-                        <option value="months">Months</option>
-                      </select>
+                <div class="form-group">
+                  <label class="text-dark font-weight-bold">Focus</label>
+                  <div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="focus-real" value="real" name="check-focus">
+                      <label class="form-check-label" for="focus-real">Real</label>
                     </div>
-                    <div class="col mt-2 pl-0">
-                      <input class="form-control" type="number" min="1" value="1" id="granularity-value" required>
-                      <div class="invalid-feedback text-muted">
-                        Choose a positive number
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="focus-simulated" value="simulated"
+                        name="check-focus">
+                      <label class="form-check-label" for="focus-simulated">Simulated</label>
+                    </div>
+                  </div>
+                  <div id="div-focus">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="text-dark font-weight-bold">Sensor Group</label>
+                  <div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="sensor-group-telemanagement"
+                        value="telemanagement" name="check-sensor-group">
+                      <label class="form-check-label" for="sensor-group-telemanagement">Telemanagement</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="sensor-group-telemetry" value="telemetry"
+                        name="check-sensor-group">
+                      <label class="form-check-label" for="sensor-group-telemetry">Telemetry</label>
+                    </div>
+                  </div>
+                  <div id="div-sensor-group">
+                  </div>
+                </div>
+
+                <div id="div-sensor-type" class="form-group">
+                  <label class="text-dark font-weight-bold" for="sensor-type">Sensor Type</label>
+                  <select id="sensor-type" class="selectpicker form-control" multiple data-actions-box="true">
+                    <option value="flow">Flow</option>
+                    <option value="pressure">Pressure</option>
+                  </select>
+                </div>
+
+                <div id="div-sensor-name" class="form-group">
+                  <label class="text-dark font-weight-bold" for="sensor-name">Sensor Name</label>
+                  <select id="sensor-name" class="selectpicker form-control" data-live-search="true" multiple
+                    data-actions-box="true" multiple data-selected-text-format="count > 5">
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="text-dark font-weight-bold" for="date-range">Date Range</label>
+                  <input id="date-range" class="form-control" type="text" name="date-range"
+                    value="01/06/2017 - 15/06/2017" />
+                </div>
+
+                <div id="div-calendar" class="form-group">
+                  <label class="text-dark font-weight-bold" for="calendar">Calendar</label>
+                  <select id="calendar" class="selectpicker form-control" data-live-search="true" multiple
+                    data-actions-box="true">
+                    <option value="monday" data-tokens="Weekday">Monday</option>
+                    <option value="tuesday" data-tokens="Weekday">Tuesday</option>
+                    <option value="wednesday" data-tokens="Weekday">Wednesday</option>
+                    <option value="thursday" data-tokens="Weekday">Thursday</option>
+                    <option value="friday" data-tokens="Weekday">Friday</option>
+                    <option value="saturday" data-tokens="Weekend">Saturday</option>
+                    <option value="sunday" data-tokens="Weekend">Sunday</option>
+                  </select>
+                </div>
+
+                <div class="form-group mb-2">
+                  <label class="mb-0 text-dark font-weight-bold" for="granularity">Granularity</label>
+                  <div class="container-fluid pl-0 pr-0">
+                    <div class="row ml-0">
+                      <div class="col mt-2 pl-0">
+                        <select id="granularity" class="selectpicker form-control" required>
+                          <option value="minutes">Minutes</option>
+                          <option value="hours">Hours</option>
+                          <option value="days">Days</option>
+                          <option value="months">Months</option>
+                        </select>
+                      </div>
+                      <div class="col mt-2 pl-0">
+                        <input class="form-control" type="number" min="1" value="1" id="granularity-value" required>
+                        <div class="invalid-feedback text-muted">
+                          Choose a positive number
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
             </div>
 
             <hr class="my-0 mr-4 ml-4">
 
             <div class="card-body">
-              <h5 class="card-title">Data Analysis</h5>
 
-              <div class="form-group">
-                <label class="text-dark font-weight-bold">Mode</label>
-                <div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="check-mode" id="check-default" value="default"
-                      checked>
-                    <label class="form-check-label" for="check-default">Default</label>
+              <h5 class="card-title mr-1 d-inline">Data Analysis</h5>
+              <button id="btn-collapse-analysis" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
+                type="button" data-toggle="collapse" data-target="#collapse-analysis" aria-expanded="false"
+                aria-controls="collapse-analysis" title="Hide">
+                <i class="fa fa-chevron-up"></i>
+              </button>
+              <p class="card-text mb-0">Choose how to analyse the data</p>
+
+              <div class="collapse show" id="collapse-analysis">
+
+                <div class="form-group mt-3">
+                  <label class="text-dark font-weight-bold">Mode</label>
+                  <div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="check-mode" id="check-default" value="default"
+                        checked>
+                      <label class="form-check-label" for="check-default">Default</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="check-mode" id="check-parametric"
+                        value="parametric">
+                      <label class="form-check-label" for="check-parametric">Parametric</label>
+                    </div>
                   </div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="check-mode" id="check-parametric"
-                      value="parametric">
-                    <label class="form-check-label" for="check-parametric">Parametric</label>
+                </div>
+
+                <div class="form-group">
+                  <label class="text-dark font-weight-bold">Pairwise Comparisons</label>
+                  <div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" id="check-all-pairs" value="all pairs"
+                        name="check-pairwise-comparisons">
+                      <label class="form-check-label" for="check-all-pairs" checked>All Pairs</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" id="check-cross-type" value="cross type"
+                        name="check-pairwise-comparisons">
+                      <label class="form-check-label" for="check-cross-type">Cross Type</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="div-correlation-type" class="form-group">
+                  <label class="text-dark font-weight-bold" for="correlation-type">Correlation Type</label>
+                  <select id="correlation-type" class="selectpicker form-control" multiple data-actions-box="true">
+                    <option value="tuples">Tuples</option>
+                    <option value="temporal">Temporal</option>
+                  </select>
+                </div>
+
+                <div id="div-correlation" class="form-group">
+                  <label class="text-dark font-weight-bold" for="correlation">Correlation</label>
+                  <select id="correlation" class="selectpicker form-control" multiple data-actions-box="true">
+                  </select>
+                </div>
+
+                <div class="form-group mb-0">
+                  <label class="text-dark font-weight-bold">PCA</label>
+                  <div>
+                    <div class="form-check form-check-inline">
+                      <input id="pca" class="form-check-input" type="checkbox" name="check-pca" value="pca">
+                      <label class="form-check-label" for="pca">Show Statistics</label>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <div class="form-group">
-                <label class="text-dark font-weight-bold">Pairwise Comparisons</label>
-                <div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" id="check-all-pairs" value="all pairs"
-                      name="check-pairwise-comparisons">
-                    <label class="form-check-label" for="check-all-pairs" checked>All Pairs</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" id="check-cross-type" value="cross type"
-                      name="check-pairwise-comparisons">
-                    <label class="form-check-label" for="check-cross-type">Cross Type</label>
-                  </div>
-                </div>
-              </div>
-
-              <div id="div-correlation-type" class="form-group">
-                <label class="text-dark font-weight-bold" for="correlation-type">Correlation Type</label>
-                <select id="correlation-type" class="selectpicker form-control" multiple data-actions-box="true">
-                  <option value="tuples">Tuples</option>
-                  <option value="temporal">Temporal</option>
-                </select>
-              </div>
-
-              <div id="div-correlation" class="form-group">
-                <label class="text-dark font-weight-bold" for="correlation">Correlation</label>
-                <select id="correlation" class="selectpicker form-control" multiple data-actions-box="true">
-                </select>
-              </div>
-
-              <div class="form-group mb-0">
-                <label class="text-dark font-weight-bold">PCA</label>
-                <div>
-                  <div class="form-check form-check-inline">
-                    <input id="pca" class="form-check-input" type="checkbox" name="check-pca" value="pca">
-                    <label class="form-check-label" for="pca">Show Statistics</label>
-                  </div>
-                </div>
-              </div>
-
             </div>
 
             <hr class="my-1 mr-4 ml-4">
@@ -254,18 +354,60 @@
         </form>
       </div>
 
-      <div class="col-sm-8">
+      <div id="row-visualization" class="col-sm-8">
         <div class="card mb-4">
-          <div class="card-body">
-            <h5 class="card-title">Visualization</h5>
-            <p class="card-text">Where we will have various graphs</p>
-
-            <div id="line_chart"></div>
-
-            <div id="heat_map"></div>
-
-
+          <div class="card-header">
+            <p class="d-inline mr-1">Visualization</p>
+            <button id="btn-collapse-visualization" class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline"
+              type="button" title="Expand" name="active">
+              <i class="fa fa-expand"></i>
+            </button>
+            <button id="btn-collapse-visualization-settings-card"
+              class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle" type="button" data-toggle="collapse"
+              data-target="#collapse-visualization-settings-card" aria-expanded="true"
+              aria-controls="collapse-visualization-settings-card" title="Settings" disabled>
+              <i class="fa fa-cog"></i>
+            </button>
+            <button id="btn-redo-visualization"
+              class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo" disabled>
+              <i class="fa fa-redo-alt"></i>
+            </button>
           </div>
+
+          <div class="card-body" id="visualizaition-help-text-card-body">
+            <p class="card-text" id="visualization-help-text">Here you will be able to explore the results. Please press
+              the "Run Query" button.</p>
+          </div>
+
+          <div id="collapse-line_chart-section" class="collapse">
+            <div class="card-body">
+              <h5 class="card-title d-inline mr-1">Line Chart</h5>
+              <button id="btn-collapse-line_chart" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
+                type="button" data-toggle="collapse" data-target="#collapse-line_chart" aria-expanded="false"
+                aria-controls="collapse-line_chart" title="Hide">
+                <i class="fa fa-chevron-up"></i>
+              </button>
+              <div class="collapse show" id="collapse-line_chart">
+                <div id="line_chart"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="collapse-heat_map-section" class="collapse">
+            <hr class="my-0 mr-4 ml-4">
+            <div class="card-body">
+              <h5 class="card-title d-inline mr-1">Correlogram</h5>
+              <button id="btn-collapse-heat_map" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
+                type="button" data-toggle="collapse" data-target="#collapse-heat_map" aria-expanded="false"
+                aria-controls="collapse-heat_map" title="Hide">
+                <i class="fa fa-chevron-up"></i>
+              </button>
+              <div class="collapse show" id="collapse-heat_map">
+                <div id="heat_map"></div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

@@ -18,7 +18,8 @@ def get_data():
     df_2 = select_data(path_init, "infraquinta", "interpolated", 6, "2017-06-01 00:00:00", "2017-06-01 23:59:59")
     df = pd.concat([df_1, df_2], axis=1)
     df.index = df_1.index.map(str)
-    df.columns = ["sensor_1","sensor_2"]
+    df.columns = ["1 (R, TLMT, F)","2 (S, TLMG, P)"] 
+    
     return df
 
 def get_json():
