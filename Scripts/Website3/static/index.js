@@ -449,18 +449,19 @@ function submit() {
 
     var data = {
         request_type: "form",  
-        source: $('#source').selectpicker('val'),
-        sensor_name: $('#sensor-name').selectpicker('val'),
-        date_range_min: $('#date-range').data('daterangepicker').startDate.format('DD-MM-YYYY'),
-        date_range_max: $('#date-range').data('daterangepicker').endDate.format('DD-MM-YYYY'),
-        calendar: $('#calendar').selectpicker('val'),
+        wme: $('#source').selectpicker('val'),
+        sensors_id: JSON.stringify($('#sensor-name').selectpicker('val')),
+        date_range_min: $('#date-range').data('daterangepicker').startDate.format('YYYY-MM-DD'),
+        date_range_max: $('#date-range').data('daterangepicker').endDate.format('YYYY-MM-DD'),
+        calendar: JSON.stringify($('#calendar').selectpicker('val')),
         granularity_unit: $('#granularity').selectpicker('val'),   
         granularity_frequence: document.getElementById("granularity-value").value,
         mode: document.querySelector('input[name="check-mode"]:checked').value,
         pairwise_comparisons: document.querySelector('input[name="check-pairwise-comparisons"]:checked').value,
-        correlation: $('#correlation').selectpicker('val'),
+        correlations: JSON.stringify($('#correlation').selectpicker('val')),
         pca: document.getElementById("pca").checked  
-    }; 
+    };
+    console.log(data)
     $.post("receiver", data, receive_data);
     event.preventDefault();
 
@@ -469,14 +470,21 @@ function submit() {
 function receive_data(data, status) {
 
     var data_json = JSON.parse(data);
+    var lc_data;
 
     if (data_json.hasOwnProperty('line_chart')) {
-        create_line_chart(data_json["line_chart"]); 
-    }
+        //create_line_chart(data_json["line_chart"]); 
+    };
 
     if (data_json.hasOwnProperty('heat_map')) {
         create_heat_map(data_json["heat_map"]);
-    }
+    };
+
+    if (data_json.hasOwnProperty('line_chart_2')) {
+        create_line_chart(data_json["line_chart_2"]);
+    };
+
+
   
     activate_form();
 
@@ -526,17 +534,20 @@ $('input[name="date-range"]').on('apply.daterangepicker', function (ev, picker) 
 
 function create_line_chart(lc_data) {
     var config = {
-        responsive: true
+        responsive: true,
+        scrollZoom: true
     };
 
     var layout = {
         xaxis: {
             //rangeslider: {}
+            zeroline: false
         }, 
         yaxis: {
             title: {
-                text: 'Flow [m<sup>3</sup>/h] | Pressure [bar]',
-            }
+                text: 'Flow [m<sup>3</sup>/h]',
+            },
+            zeroline: false
         },
         legend: {"orientation": "h"},
         margin: {
@@ -546,10 +557,31 @@ function create_line_chart(lc_data) {
             t: 20,
             //pad: 4
           },
+        yaxis2: {
+            zeroline: false,
+            title: 'Pressure [bar]',
+            overlaying: 'y',
+            side: 'right'
+        },
     };
 
     var data = [];
 
+    for (var sensor_id in lc_data) {
+        if (!sensor_list.hasOwnProperty(sensor_id)) {
+            continue;
+        };
+        var x = Object.keys(lc_data[sensor_id]);
+        var y_aux = Object.values(lc_data[sensor_id]);
+        y = []
+        y_aux.forEach(row => {
+            y.push(row['value'])
+        });
+
+        var trace = create_trace(sensor_id, x, y);
+        data.push(trace);
+    };
+/*
     for (sensor in lc_data) {
 
         var x = Object.keys(lc_data[sensor]);
@@ -558,19 +590,31 @@ function create_line_chart(lc_data) {
         var trace = create_trace(sensor, x, y);
         data.push(trace);
     };
-
+*/
     $('#collapse-line_chart-section').collapse('show');
     $('#collapse-line_chart').collapse('show');
     Plotly.newPlot('line_chart', data, layout, config);  
 };
 
 function create_trace(name, x, y) {
-    var trace = {
-        name: name,
-        x: x,
-        y: y,
-        type: 'scatter'
-    };
+    var trace;
+    if(name == 3){
+        trace = {
+            name: name,
+            x: x,
+            y: y,
+            type: 'scatter',
+            yaxis: 'y2'
+        };
+    } else {
+        trace = {
+            name: name,
+            x: x,
+            y: y,
+            type: 'scatter'
+        };
+    }
+
     return trace;
 };
 

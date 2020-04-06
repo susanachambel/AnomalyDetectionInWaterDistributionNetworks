@@ -19,6 +19,7 @@ def process_df(df):
     df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d %H:%M:%S')
     df.index = df['date']
     del df['date']
+    df = df.sort_index()
     return df
 
 """
@@ -53,8 +54,10 @@ def select_data_db(mydb, wme, data_type, sensor_id, date_min, date_max):
         measure_table= "sensortmmeasure"
         sensorid_row = "sensortmId"
     else:
-        measure_table == "sensorsmmeasure"
-        sensorid_row == "sensorsmId"
+        measure_table == "sensorsimmeasure"
+        sensorid_row == "sensorsimId"
+        
+    # o query para o simulado tem de ser diferente
      
     query = ("SELECT date, value" + " FROM " +  wme + "." + measure_table +
     " where date > cast('" + date_min + "' AS datetime) and date < cast('" + 

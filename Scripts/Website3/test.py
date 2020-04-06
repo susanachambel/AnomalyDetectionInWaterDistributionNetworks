@@ -32,7 +32,7 @@ def worker():
     
     else:
         
-        print(request.form['source'])
+        lc_2 = process_data_request(request)
           
         df = get_data()
         data_1 = df.to_json(orient='columns')
@@ -40,7 +40,7 @@ def worker():
 
         data_2 = {"key1": "var2", "key2":"var2"}
         
-        data = {"line_chart": data_1, "heat_map": data_2}
+        data = {"line_chart": data_1, "heat_map": data_2, "line_chart_2": lc_2}
         
         data_string = json.dumps(data)
         
