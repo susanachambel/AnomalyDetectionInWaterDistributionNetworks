@@ -473,19 +473,13 @@ function receive_data(data, status) {
     var lc_data;
 
     if (data_json.hasOwnProperty('line_chart')) {
-        //create_line_chart(data_json["line_chart"]); 
+        create_line_chart(data_json["line_chart"]);
     };
 
     if (data_json.hasOwnProperty('heat_map')) {
         create_heat_map(data_json["heat_map"]);
     };
 
-    if (data_json.hasOwnProperty('line_chart_2')) {
-        create_line_chart(data_json["line_chart_2"]);
-    };
-
-
-  
     activate_form();
 
     $('#collapse-visualization-settings-card').collapse('show');
@@ -524,13 +518,6 @@ function validate_check_box(field, length) {
         };
     };
 };
-
-/*
-$('input[name="date-range"]').on('apply.daterangepicker', function (ev, picker) {
-    console.log(picker.startDate.format('DD-MM-YYYY'));
-    console.log(picker.endDate.format('DD-MM-YYYY'));
-});
-*/
 
 function create_line_chart(lc_data) {
     var config = {
@@ -581,24 +568,20 @@ function create_line_chart(lc_data) {
         var trace = create_trace(sensor_id, x, y);
         data.push(trace);
     };
-/*
-    for (sensor in lc_data) {
 
-        var x = Object.keys(lc_data[sensor]);
-        var y = Object.values(lc_data[sensor]);
-
-        var trace = create_trace(sensor, x, y);
-        data.push(trace);
-    };
-*/
     $('#collapse-line_chart-section').collapse('show');
     $('#collapse-line_chart').collapse('show');
     Plotly.newPlot('line_chart', data, layout, config);  
 };
 
-function create_trace(name, x, y) {
+function create_trace(sensor_id, x, y) {
     var trace;
-    if(name == 3){
+
+    name = sensor_id; // devia ser mais descritivo
+
+    sensor = sensor_list[sensor_id];
+
+    if(sensor['type'] == 'pressure'){
         trace = {
             name: name,
             x: x,
@@ -613,7 +596,7 @@ function create_trace(name, x, y) {
             y: y,
             type: 'scatter'
         };
-    }
+    };
 
     return trace;
 };
@@ -659,7 +642,7 @@ function create_heat_map(hm_data) {
 
 function init_form(wme) {
     update_form(wme);
-    create_date_range_picker("01/06/2017", "08/06/2017", "01/01/2017", "31/12/2017", 7);
+    create_date_range_picker("01/06/2017", "07/06/2017", "01/01/2017", "31/12/2017", 6);
     $('#calendar').selectpicker('refresh');
     $('#calendar').selectpicker('selectAll');
     $('#granularity').selectpicker('val', 'hours');

@@ -27,15 +27,13 @@ def process_data_request(request):
     dfs = {}
     
     if(wme == 'infraquinta'):
-        dfs = get_data_2(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence)    
+        dfs = get_data(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence)    
         line_chart_data = dfs_to_json(dfs)
         #heat_map_data = dfs_analysis(dfs)
-        data = {'line_chart': line_chart_data}
-
+        #data = {'line_chart': line_chart_data}
         return line_chart_data
     else:
-        return get_data()
-
+        return "do something"
 
 def dfs_to_json(dfs):   
     dfs_json = {} 
@@ -47,16 +45,6 @@ def dfs_to_json(dfs):
         dfs_json[sensor_id] = df_json
     return dfs_json    
 
-def get_data():
-    config = Configuration()
-    path_init = config.path
-    df_1 = select_data(path_init, "infraquinta", "interpolated", 1, "2017-06-01 00:00:00", "2017-06-01 23:59:59")
-    df_2 = select_data(path_init, "infraquinta", "interpolated", 6, "2017-06-01 00:00:00", "2017-06-01 23:59:59")
-    df = pd.concat([df_1, df_2], axis=1)
-    df.index = df_1.index.map(str)
-    df.columns = ["1 (R, TLMT, F)","2 (S, TLMG, P)"] 
-    
-    return df
 
 def get_json():
     config = Configuration()
@@ -66,7 +54,7 @@ def get_json():
     json_data = json.loads(data)
     return json_data
 
-def get_data_2(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence): 
+def get_data(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence): 
     
     config = Configuration()
     mydb = config.create_db_connection()    
@@ -83,7 +71,7 @@ def get_data_2(wme, sensors_id, date_range_min, date_range_max, calendar, granul
 
         df = pd.DataFrame()
         
-        if(info['focus']=='real'): 
+        if(info['focus']=='real'):
             if(info['group']=='telemetry'):
                 df = select_data_db(mydb, wme, info['group'], int(info['name']), date_range_min, date_range_max)
             else:
@@ -95,8 +83,9 @@ def get_data_2(wme, sensors_id, date_range_min, date_range_max, calendar, granul
         
         #tratar da granularidade
         #tradar dos dias da semana
-        
+    
+    mydb.close()    
     return dfs
         
     
-#get_data_2('infraquinta', ['1', '2', '3'],"2017-06-01", "2017-06-08", [], 'hours', 1);  
+#get_data('infraquinta', ['1', '2', '3'],"2017-06-01", "2017-06-08", [], 'hours', 1);  

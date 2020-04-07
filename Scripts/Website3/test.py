@@ -32,15 +32,11 @@ def worker():
     
     else:
         
-        lc_2 = process_data_request(request)
-          
-        df = get_data()
-        data_1 = df.to_json(orient='columns')
-        data_1 = json.loads(data_1)
+        line_chart = process_data_request(request)
 
-        data_2 = {"key1": "var2", "key2":"var2"}
+        heat_map = {"key1": "var2", "key2":"var2"}
         
-        data = {"line_chart": data_1, "heat_map": data_2, "line_chart_2": lc_2}
+        data = {"line_chart": line_chart, "heat_map": heat_map}
         
         data_string = json.dumps(data)
         
