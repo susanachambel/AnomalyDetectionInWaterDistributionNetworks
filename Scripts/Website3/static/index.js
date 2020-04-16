@@ -1,5 +1,9 @@
 var wmes = 0;
 var sensor_list = 0;
+var selected_correlations = 0;
+var hm_selected_data;
+var selected_data = 0;
+
 var focus = 0;
 var group = 0;
 var type = 0;
@@ -47,6 +51,10 @@ window.onload = function () {
         };
     });
 
+    document.getElementById("btn-swap-columns-corr").addEventListener("click", function(){ 
+        create_heat_map("swap");
+    });
+
     document.getElementById("source").addEventListener("change", function () {
         update_form(this.value);
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
@@ -84,6 +92,8 @@ window.onload = function () {
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             validate_selection("sensor-name", 2);
         };
+
+        //console.log($('#sensor-name').selectpicker('val'))
     });
 
     document.getElementById("calendar").addEventListener("change", function () {
@@ -105,13 +115,21 @@ window.onload = function () {
         };
     });
 
+    document.getElementById("corr-correlation").addEventListener("change", function () {
+        create_heat_map("change-correlation");
+    });
+
+    document.getElementById("corr-order-by").addEventListener("change", function () {
+        create_heat_map("change-order");
+    });
+
     get_init_json();
 };
 
 function add_event_listener_collapsers(name, is_chart){
     $('#collapse-' + name).on('hidden.bs.collapse', function () {
         $("#btn-collapse-" + name).html('<i class="fa fa-chevron-down"></i>');
-        document.getElementById('btn-collapse-' + name).title = 'Show';  
+        document.getElementById('btn-collapse-' + name).title = 'Show';       
         if (is_chart){
             Plotly.Plots.resize(name);
         };
@@ -119,6 +137,9 @@ function add_event_listener_collapsers(name, is_chart){
     $('#collapse-' + name).on('shown.bs.collapse', function () {
         $("#btn-collapse-" + name).html('<i class="fa fa-chevron-up"></i>');
         document.getElementById('btn-collapse-' + name).title = 'Hide';
+        if((name=="target") || (name=="analysis")){
+            compress_expand_visualization("compress")
+        }
         if (is_chart){
             Plotly.Plots.resize(name);
         };
@@ -349,9 +370,9 @@ function update_sensors(delete_sensors, select_all) {
         };
 
         if (approved && ($("#sensor-name option[value='" + key + "']").length == 0)) {
-            var data_tokens = sensor["focus"] + " " + sensor["group"] + " " + sensor["type"];
-            var data_subtext = dim(sensor["focus"]) + " • " + dim(sensor["group"]) + " • " + dim(sensor["type"]);
-            var option = '<option value="' + key + '" data-subtext="' + data_subtext + '" data-tokens="' + data_tokens + '">' + sensor["name"] + '</option>';
+            var data_tokens = sensor["name"] + " " + sensor["focus"] + " " + sensor["group"] + " " + sensor["type"];
+            var data_subtext = sensor["name"] + " • " + dim(sensor["focus"]) + " • " + dim(sensor["group"]) + " • " + dim(sensor["type"]);
+            var option = '<option value="' + key + '" data-subtext="' + data_subtext + '" data-tokens="' + data_tokens + '">' + sensor["name_long"] + '</option>';
             $('#sensor-name').append(option);
         } else {
             if ((!approved) && ($("#sensor-name option[value='" + key + "']").length != 0)) {
@@ -385,14 +406,38 @@ function dim(name) {
     }
 }
 
+function create_correlation_option(value){
+    var subtext;
+    var name;
+    switch (value) {
+        case "dcca":
+            subtext = "Tuples";
+            name = "DCCA";
+            break;
+        case "dcca-ln":
+            subtext = "Tuples";
+            name = "DCCA-ln";
+            break;
+        case "pearson":
+            subtext = "Temporal";
+            name = "Pearson";
+            break;
+        case "kullback-leibler":
+            subtext = "Temporal";
+            name = "Kullback-Leibler";
+            break;
+    }
+    return '<option data-subtext="' + subtext + '" data-tokens="Tuples" value="' + value + '">' + name + '</option>';
+}
+
 function update_correlation() {
 
-    selection = $('#correlation-type').val();
-    correlation_temporal = [
+    var selection = $('#correlation-type').val();
+    var correlation_temporal = [
         ["dcca", "DCCA"],
         ["dcca-ln", "DCCA-ln"]
     ];
-    correlation_tuples = [
+    var correlation_tuples = [
         ["pearson", "Pearson"],
         ["kullback-leibler", "Kullback-Leibler"]
     ];
@@ -464,20 +509,19 @@ function submit() {
     console.log(data)
     $.post("receiver", data, receive_data);
     event.preventDefault();
-
 };
 
 function receive_data(data, status) {
 
-    var data_json = JSON.parse(data);
-    var lc_data;
+    selected_data = JSON.parse(data);
 
-    if (data_json.hasOwnProperty('line_chart')) {
-        create_line_chart(data_json["line_chart"]);
+    if (selected_data.hasOwnProperty('line_chart')) {
+        create_line_chart(selected_data["line_chart"]);
     };
 
-    if (data_json.hasOwnProperty('heat_map')) {
-        create_heat_map(data_json["heat_map"]);
+    if (selected_data.hasOwnProperty('heat_map')) {
+        selected_correlations = Object.keys(selected_data["heat_map"])
+        create_heat_map("create");
     };
 
     activate_form();
@@ -528,22 +572,29 @@ function create_line_chart(lc_data) {
     var layout = {
         xaxis: {
             //rangeslider: {}
-            zeroline: false
+            zeroline: false,
         }, 
         yaxis: {
             title: {
                 text: 'Flow [m<sup>3</sup>/h]',
             },
-            zeroline: false
+            zeroline: false,
+            automargin: true
         },
-        legend: {"orientation": "h"},
+        legend: {
+            orientation: 'h',
+            xanchor: 'center',
+            x: 0.5
+        },
+        
         margin: {
             //l: 50,
             //r: 50,
-            //b: 0,
+            b: 0,
             t: 20,
             //pad: 4
-          },
+        },
+        
         yaxis2: {
             zeroline: false,
             title: 'Pressure [bar]',
@@ -576,10 +627,8 @@ function create_line_chart(lc_data) {
 
 function create_trace(sensor_id, x, y) {
     var trace;
-
-    name = sensor_id; // devia ser mais descritivo
-
-    sensor = sensor_list[sensor_id];
+    var name = create_sensor_name(sensor_id); // devia ser mais descritivo
+    var sensor = sensor_list[sensor_id];
 
     if(sensor['type'] == 'pressure'){
         trace = {
@@ -587,22 +636,74 @@ function create_trace(sensor_id, x, y) {
             x: x,
             y: y,
             type: 'scatter',
-            yaxis: 'y2'
+            yaxis: 'y2',
+            connectgaps: false
         };
     } else {
         trace = {
             name: name,
             x: x,
             y: y,
-            type: 'scatter'
+            type: 'scatter',
+            connectgaps: false
         };
     };
 
     return trace;
 };
 
+function fix_z(z){
+    z_aux = JSON.parse(JSON.stringify(z));
+    z.forEach(function(part, index) {
+        z[index].forEach(function(partz, indexz) {          
+            if (z[index][indexz] == 999999999) {
+                z_aux[index][indexz] = null;
+            }
+          });     
+    });
+    return z_aux;
+};
 
-function create_heat_map(hm_data) {
+function fix_x_y(x){
+    var x_aux = x.slice(0);
+    x.forEach(function(part, index) {
+        x_aux[index] = create_sensor_name(x[index])   
+    });
+    return x_aux;
+};
+
+function create_heat_map(type) {
+
+    var hm_variables;
+
+    switch (type) {
+        case "create":
+            update_select_correlations_correlogram();
+            hm_selected_data = selected_data['heat_map'][selected_correlations[0]];
+            hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
+   
+            console.log(selected_data['pairwise_comparisons'])
+            if (selected_data['pairwise_comparisons'] == "all pairs") {
+                document.getElementById("btn-swap-columns-corr").disabled = true;
+            } else {
+                document.getElementById("btn-swap-columns-corr").disabled = false;
+            }
+            break;
+        case "swap":
+            swap_heat_map_data();
+            hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
+            break;
+        case "change-order":
+            hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
+            break;
+        case "change-correlation":
+            var selected_correlation = $('#corr-correlation').selectpicker('val')
+            hm_selected_data = selected_data['heat_map'][selected_correlation];
+            hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
+            break;
+    }
+
+
 
     var config = {
         responsive: true
@@ -613,31 +714,167 @@ function create_heat_map(hm_data) {
             //l: 50,
             //r: 50,
             //b: 0,
-            t: 40,
+            t: 20,
             //pad: 4
-          }
+          },
+        yaxis: {
+            automargin: true,
+            type: 'category'
+        },
+        xaxis: {
+            automargin: true,
+            type: 'category',
+            showticklabels: false,
+            ticks: ''
+        }
     };
 
     var data = [{
-        z: [
-            [-1, 0.5, -0.5],
-            [0.3, 1, 0.8],
-            [-0.8, 0, -0.7]
-        ],
-        x: ['1<br>(R, TLMT, F)', '2<br>(R, TLMT, F)', '3<br>(R, TLMT, F)'],
-        y: ['1<br>(R, TLMT, F)', '2<br>(R, TLMT, F)', '3<br>(R, TLMT, F)'],
+        z: hm_variables.z,
+        x: hm_variables.x,
+        y: fix_x_y(hm_variables.y),
+        
+        text: hm_variables.text,
+        hovertemplate: 'Y: %{y}<extra></extra>' +
+                        '<br>%{text}' + 
+                        '<br>Corr: %{z}',
+        
         colorscale: 'RdBu',
         //reversescale: true,
         zmin: -1,
         zmax: 1,
+        xgap :	3,
+        ygap :	3,
         type: 'heatmap',
         hoverongaps: false
     }];
-    
+
     $('#collapse-heat_map-section').collapse('show');
     $('#collapse-heat_map').collapse('show');
     Plotly.newPlot('heat_map', data, layout, config);
 };
+
+function update_select_correlations_correlogram(){
+    $('#corr-correlation').empty();
+    $('#corr-correlation').prop("disabled", false);
+    selected_correlations.forEach(key => {
+        var option = create_correlation_option(key)
+        $('#corr-correlation').append(option);
+    });
+    $('#corr-correlation').selectpicker('refresh');
+    $('#corr-correlation').selectpicker('render');
+}
+
+function create_sensor_name(id){
+
+    var name = "";
+
+    // todo
+
+    if (wmes.infraquinta.hasOwnProperty(id)) {      
+        name = wmes.infraquinta[id]['name_long']
+    } else {
+        if (wmes.barreiro.hasOwnProperty(id)){
+            name = wmes.barreiro[id]['name_long']
+        } else {
+            name = wmes.beja[id]['name_long']
+        };
+    };
+    return name;  
+}
+
+
+function swap_heat_map_data(){
+
+    var dic = hm_selected_data;
+
+    var dic_keys = Object.keys(dic);
+    var dic_aux_keys = [];
+
+    dic[dic_keys[0]].forEach(element => {
+        dic_aux_keys.push(element.id);
+    });
+
+    dic_aux_keys.sort(function (a, b) {
+        return parseInt(a) - parseInt(b);
+    });
+
+    var dic_aux = {}
+    
+    dic_aux_keys.forEach(key => {
+        var dic_aux_aux = []
+        dic_keys.forEach(key1 => {
+            var element1;
+            dic[key1].forEach(element => {
+                if(element.id == key){
+                    element1 = element;
+                };
+            });
+            dic_aux_aux.push({'id':key1,'corr':element1.corr, 'dist': element1.dist});
+        });
+        dic_aux[key] = dic_aux_aux;
+    });
+
+    hm_selected_data = dic_aux;
+
+    console.log(hm_selected_data);
+}
+
+
+function transform_heat_map_data(sortby){
+
+    var dic = hm_selected_data;
+
+    var matrix_z = [];
+    var matrix_text = []
+
+    var y = Object.keys(dic);
+    y.sort(function (a, b) {
+        return parseInt(a) - parseInt(b);
+    });
+
+    var x = [];
+    dic[y[0]].forEach(element => {
+        x.push(element.id)
+    });
+
+    var x_aux = []
+
+    for (var i = 0; i < x.length; i++) {
+        x_aux.push(i);
+    }
+      
+    for (var key in dic) {
+        if (!dic.hasOwnProperty(key)) {
+            continue;
+        };
+
+        var sensor = dic[key];
+
+        if(sortby == "distance"){
+            sensor.sort(function (a, b) {
+                return a.dist - b.dist;
+            });
+        } else {
+            sensor.sort(function (a, b) {
+                return a.corr - b.corr;
+            });
+        }
+
+        var matrix_z_row = []
+        var matrix_text_row = []
+
+        sensor.forEach(element => {
+            matrix_z_row.push(element.corr);
+            matrix_text_row.push('X: ' + create_sensor_name(element.id) + '<br>Dist: ' + element.dist)
+        });
+
+        matrix_z.push(matrix_z_row);
+        matrix_text.push(matrix_text_row);
+    };
+
+    return {'x':x_aux, 'y':y, 'z': matrix_z, 'text': matrix_text}
+}
 
 
 function init_form(wme) {
@@ -645,7 +882,7 @@ function init_form(wme) {
     create_date_range_picker("01/06/2017", "07/06/2017", "01/01/2017", "31/12/2017", 6);
     $('#calendar').selectpicker('refresh');
     $('#calendar').selectpicker('selectAll');
-    $('#granularity').selectpicker('val', 'hours');
+    $('#granularity').selectpicker('val', '1');
     document.getElementById("granularity-value").value = 1;
     document.getElementById("check-default").checked = true;
     document.getElementById("check-all-pairs").checked = true;
@@ -704,14 +941,14 @@ function deactivate_form() {
     $('#correlation').prop('disabled', true);
     $('#correlation').selectpicker('refresh');
 
-    $(':button[type=button]').prop("disabled", true);
+    $(':button[btn-type=collapse]').prop("disabled", true);
+    $(':button[btn-type=redo]').prop("disabled", true);
 
     $('#form-visualization-settings input[type=checkbox]').prop("disabled", true);
     $('#vis-sensor-type').prop("disabled", true);
     $('#vis-sensor-type').selectpicker('refresh');
     $('#vis-sensor-name').prop("disabled", true);
     $('#vis-sensor-name').selectpicker('refresh');
-
 };
 
 function activate_form() {
@@ -735,19 +972,19 @@ function activate_form() {
     $('#correlation').prop('disabled', false);
     $('#correlation').selectpicker('refresh');
 
-    if (!focus.real) {
+    if (focus.real == false) {
         $("[value='real'][name='check-focus']").prop("disabled", true);
     }
 
-    if (!focus.simulated) {
+    if (focus.simulated == false) {
         $("[value='simulated'][name='check-focus']").prop("disabled", true);
     }
 
-    if (!group.telemanagement) {
+    if (group.telemanagement == false) {
         $("[value='telemanagement'][name='check-sensor-group']").prop("disabled", true);
     }
 
-    if (!group.telemetry) {
+    if (group.telemetry == false) {
         $("[value='telemetry'][name='check-sensor-group']").prop("disabled", true);
     }
 
@@ -763,5 +1000,7 @@ function activate_form() {
     );
     $("#run-btn").prop("disabled", false);
 
-    $(':button[type=button]').prop("disabled", false);
+    $(':button[btn-type=collapse]').prop("disabled", false);
+    $(':button[btn-type=redo]').prop("disabled", false);
+
 };

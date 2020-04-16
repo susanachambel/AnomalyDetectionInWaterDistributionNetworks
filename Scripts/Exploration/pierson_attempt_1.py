@@ -77,10 +77,6 @@ df_2 = select_data(path_init, "infraquinta", "interpolated", 1, "2017-04-01 00:0
 df_3 = select_data(path_init, "infraquinta", "interpolated", 3, "2017-04-01 00:00:00", "2017-12-31 23:59:59")
 
 
-
-
-
-
 df_2 = df_2.resample('1d').mean()
 #show_month_plot(df_2, "sensor 2", "label", "peru")
 df_3 = df_3.resample('1d').mean()

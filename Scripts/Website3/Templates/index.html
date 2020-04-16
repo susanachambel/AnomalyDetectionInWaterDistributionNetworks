@@ -77,7 +77,7 @@
           <div class="card-header">
             <p class="d-inline mr-0">Visualization Settings</p>
             <button id="btn-redo-visualization-settings"
-              class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo">
+              class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo" btn-type="redo">
               <i class="fa fa-redo-alt"></i>
             </button>
           </div>
@@ -88,7 +88,7 @@
               <button id="btn-collapse-visualization-settings"
                 class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle" type="button"
                 data-toggle="collapse" data-target="#collapse-visualization-settings" aria-expanded="false"
-                aria-controls="collapse-visualization-settings" title="Hide">
+                aria-controls="collapse-visualization-settings" title="Hide" btn-type="collapse">
                 <i class="fa fa-chevron-up"></i>
               </button>
               <p class="card-text">Choose which sensors you want to see</p>
@@ -153,7 +153,7 @@
             <div class="card-header">
               <p class="d-inline mr-0">Analysis Settings</p>
               <button id="btn-redo-analysis-settings"
-                class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo">
+                class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo" btn-type="redo">
                 <i class="fa fa-redo-alt"></i>
               </button>
             </div>
@@ -162,7 +162,7 @@
               <h5 class="card-title d-inline mr-1">Target Time Series</h5>
               <button id="btn-collapse-target" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
                 type="button" data-toggle="collapse" data-target="#collapse-target" aria-expanded="false"
-                aria-controls="collapse-target" title="Hide">
+                aria-controls="collapse-target" title="Hide" btn-type="collapse">
                 <i class="fa fa-chevron-up"></i>
               </button>
               <p class="card-text mb-0">Choose the data</p>
@@ -238,13 +238,13 @@
                   <label class="text-dark font-weight-bold" for="calendar">Calendar</label>
                   <select id="calendar" class="selectpicker form-control" data-live-search="true" multiple
                     data-actions-box="true">
-                    <option value="monday" data-tokens="Weekday">Monday</option>
-                    <option value="tuesday" data-tokens="Weekday">Tuesday</option>
-                    <option value="wednesday" data-tokens="Weekday">Wednesday</option>
-                    <option value="thursday" data-tokens="Weekday">Thursday</option>
-                    <option value="friday" data-tokens="Weekday">Friday</option>
-                    <option value="saturday" data-tokens="Weekend">Saturday</option>
-                    <option value="sunday" data-tokens="Weekend">Sunday</option>
+                    <option value="0" data-tokens="Weekday">Monday</option>
+                    <option value="1" data-tokens="Weekday">Tuesday</option>
+                    <option value="2" data-tokens="Weekday">Wednesday</option>
+                    <option value="3" data-tokens="Weekday">Thursday</option>
+                    <option value="4" data-tokens="Weekday">Friday</option>
+                    <option value="5" data-tokens="Weekend">Saturday</option>
+                    <option value="6" data-tokens="Weekend">Sunday</option>
                   </select>
                 </div>
 
@@ -254,10 +254,10 @@
                     <div class="row ml-0">
                       <div class="col mt-2 pl-0">
                         <select id="granularity" class="selectpicker form-control" required>
-                          <option value="minutes">Minutes</option>
-                          <option value="hours">Hours</option>
-                          <option value="days">Days</option>
-                          <option value="months">Months</option>
+                          <option value="0">Minutes</option>
+                          <option value="1">Hours</option>
+                          <option value="2">Days</option>
+                          <option value="3">Months</option>
                         </select>
                       </div>
                       <div class="col mt-2 pl-0">
@@ -279,7 +279,7 @@
               <h5 class="card-title mr-1 d-inline">Data Analysis</h5>
               <button id="btn-collapse-analysis" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
                 type="button" data-toggle="collapse" data-target="#collapse-analysis" aria-expanded="false"
-                aria-controls="collapse-analysis" title="Hide">
+                aria-controls="collapse-analysis" title="Hide" btn-type="collapse">
                 <i class="fa fa-chevron-up"></i>
               </button>
               <p class="card-text mb-0">Choose how to analyse the data</p>
@@ -359,17 +359,17 @@
           <div class="card-header">
             <p class="d-inline mr-1">Visualization</p>
             <button id="btn-collapse-visualization" class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline"
-              type="button" title="Expand" name="active">
+              type="button" title="Expand" name="active" btn-type="collapse">
               <i class="fa fa-expand"></i>
             </button>
             <button id="btn-collapse-visualization-settings-card"
               class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle" type="button" data-toggle="collapse"
               data-target="#collapse-visualization-settings-card" aria-expanded="true"
-              aria-controls="collapse-visualization-settings-card" title="Settings" disabled>
+              aria-controls="collapse-visualization-settings-card" title="Settings" disabled btn-type="collapse">
               <i class="fa fa-cog"></i>
             </button>
-            <button id="btn-redo-visualization"
-              class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo" disabled>
+            <button id="btn-redo-visualization" class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline"
+              type="button" title="Redo" btn-type="redo" disabled>
               <i class="fa fa-redo-alt"></i>
             </button>
           </div>
@@ -384,7 +384,7 @@
               <h5 class="card-title d-inline mr-1">Line Chart</h5>
               <button id="btn-collapse-line_chart" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
                 type="button" data-toggle="collapse" data-target="#collapse-line_chart" aria-expanded="false"
-                aria-controls="collapse-line_chart" title="Hide">
+                aria-controls="collapse-line_chart" title="Hide" btn-type="collapse">
                 <i class="fa fa-chevron-up"></i>
               </button>
               <div class="collapse show" id="collapse-line_chart">
@@ -399,10 +399,36 @@
               <h5 class="card-title d-inline mr-1">Correlogram</h5>
               <button id="btn-collapse-heat_map" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
                 type="button" data-toggle="collapse" data-target="#collapse-heat_map" aria-expanded="false"
-                aria-controls="collapse-heat_map" title="Hide">
+                aria-controls="collapse-heat_map" title="Hide" btn-type="collapse">
                 <i class="fa fa-chevron-up"></i>
               </button>
+
               <div class="collapse show" id="collapse-heat_map">
+                <div class="row justify-content-md-start ml-0">
+                  <div class="col-md-auto mt-2 pl-0 text-center">
+                    <small class="form-text text-muted mb-1">Correlation</small>
+                    <select id="corr-correlation" class="selectpicker form-control">
+                      <option value="flow">Flow</option>
+                      <option value="pressure">Pressure</option>
+                    </select>
+                    
+                  </div>
+                  <div class="col-md-auto mt-2 pl-0 text-center">
+                    <small class="form-text text-muted mb-1">Order By</small>
+                    <select id="corr-order-by" class="selectpicker form-control">
+                      <option value="distance">Distance</option>
+                      <option value="correlation">Correlation</option>
+                    </select>
+                    
+                  </div>
+                  <div class="col-md-auto mt-2 pl-0 align-self-center text-center">
+                    <small class="form-text text-muted mb-1">Swap</small>
+                    <button id="btn-swap-columns-corr" class="btn border-0 btn-light" type="button"
+                      title="Swap Columns">
+                      <i class="fa fa-random"></i>
+                    </button>
+                  </div>
+                </div>
                 <div id="heat_map"></div>
               </div>
             </div>

@@ -30,9 +30,9 @@ def import_simulated_sensors_db():
     
     # FYI: o sensor real 7 aponta para o mesmo simulado que o 3
     
-    links_tm = {'aTU4992150504':393, 'aTU4971150302':950, 
-               'aTU1320150302':949, 'aTU4972150302':1186,
-               'aTU4970150302':574, 'aTU1094150205': 976}
+    links_tm = {'aTU4992150504':393, 'aTU4971150302':938, 
+               'aTU1320150302':937, 'aTU4972150302':1168,
+               'aTU4970150302':574, 'aTU1094150205': 959}
                 
     for file in files:
         
