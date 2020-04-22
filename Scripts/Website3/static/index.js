@@ -22,7 +22,7 @@ window.onload = function () {
                 $('#collapse-analysis').collapse('show');
             } else {
                 submit();
-                form.classList.remove('was-validated');    
+                form.classList.remove('was-validated');
             };
         }, false);
     });
@@ -33,7 +33,7 @@ window.onload = function () {
     add_event_listener_collapsers("line_chart", true);
     add_event_listener_collapsers("heat_map", true);
 
-    document.getElementById("btn-redo-analysis-settings").addEventListener("click", function(){ 
+    document.getElementById("btn-redo-analysis-settings").addEventListener("click", function () {
         init_form($('#source').selectpicker('val'));
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             perform_manual_validation();
@@ -43,15 +43,15 @@ window.onload = function () {
         $('#collapse-analysis').collapse('show');
     });
 
-    document.getElementById("btn-collapse-visualization").addEventListener("click", function(){  
-        if($('#btn-collapse-visualization').prop('name') == "not-active"){
+    document.getElementById("btn-collapse-visualization").addEventListener("click", function () {
+        if ($('#btn-collapse-visualization').prop('name') == "not-active") {
             compress_expand_visualization("compress");
         } else {
             compress_expand_visualization("expand");
         };
     });
 
-    document.getElementById("btn-swap-columns-corr").addEventListener("click", function(){ 
+    document.getElementById("btn-swap-columns-corr").addEventListener("click", function () {
         create_heat_map("swap");
     });
 
@@ -92,8 +92,7 @@ window.onload = function () {
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             validate_selection("sensor-name", 2);
         };
-
-        //console.log($('#sensor-name').selectpicker('val'))
+        update_granularity_calendar();
     });
 
     document.getElementById("calendar").addEventListener("change", function () {
@@ -126,37 +125,37 @@ window.onload = function () {
     get_init_json();
 };
 
-function add_event_listener_collapsers(name, is_chart){
+function add_event_listener_collapsers(name, is_chart) {
     $('#collapse-' + name).on('hidden.bs.collapse', function () {
         $("#btn-collapse-" + name).html('<i class="fa fa-chevron-down"></i>');
-        document.getElementById('btn-collapse-' + name).title = 'Show';       
-        if (is_chart){
+        document.getElementById('btn-collapse-' + name).title = 'Show';
+        if (is_chart) {
             Plotly.Plots.resize(name);
         };
     });
     $('#collapse-' + name).on('shown.bs.collapse', function () {
         $("#btn-collapse-" + name).html('<i class="fa fa-chevron-up"></i>');
         document.getElementById('btn-collapse-' + name).title = 'Hide';
-        if((name=="target") || (name=="analysis")){
+        if ((name == "target") || (name == "analysis")) {
             compress_expand_visualization("compress")
         }
-        if (is_chart){
+        if (is_chart) {
             Plotly.Plots.resize(name);
         };
     });
 };
 
-function compress_expand_visualization(type){
+function compress_expand_visualization(type) {
     if (type == "compress") {
         $('#btn-collapse-visualization').prop('name', 'active');
-        document.getElementById('row-form').className="col-sm-4";
-        document.getElementById('row-visualization').className="col-sm-8";
+        document.getElementById('row-form').className = "col-sm-4";
+        document.getElementById('row-visualization').className = "col-sm-8";
         document.getElementById('btn-collapse-visualization').title = 'Expand';
         $("#btn-collapse-visualization").html('<i class="fa fa-expand"></i>');
     } else {
         $('#btn-collapse-visualization').prop('name', "not-active");
-        document.getElementById('row-form').className="col-sm-2";
-        document.getElementById('row-visualization').className="col-sm-10";
+        document.getElementById('row-form').className = "col-sm-2";
+        document.getElementById('row-visualization').className = "col-sm-10";
         document.getElementById('btn-collapse-visualization').title = 'Compress';
         $("#btn-collapse-visualization").html('<i class="fa fa-compress"></i>');
     };
@@ -175,7 +174,6 @@ function perform_manual_validation() {
 };
 
 function get_init_json() {
-    console.log("get_init_json");
     var data = {
         request_type: "json"
     };
@@ -189,6 +187,7 @@ function receive_init_json(data, status) {
         barreiro: data_json['barreiro'],
         beja: data_json['beja']
     };
+
     init_form("infraquinta");
 };
 
@@ -387,6 +386,8 @@ function update_sensors(delete_sensors, select_all) {
     if (select_all) {
         $('#sensor-name').selectpicker('selectAll');
     }
+
+    update_granularity_calendar();
 }
 
 function dim(name) {
@@ -406,7 +407,7 @@ function dim(name) {
     }
 }
 
-function create_correlation_option(value){
+function create_correlation_option(value) {
     var subtext;
     var name;
     switch (value) {
@@ -478,7 +479,7 @@ function update_correlation() {
 
 
 function submit() {
-    
+
     deactivate_form();
 
     $('#collapse-target').collapse('hide');
@@ -487,24 +488,24 @@ function submit() {
     $('#collapse-heat_map-section').collapse('hide');
 
     window.scroll({
-        top: 0, 
-        left: 0, 
+        top: 0,
+        left: 0,
         behavior: 'smooth'
     });
 
     var data = {
-        request_type: "form",  
+        request_type: "form",
         wme: $('#source').selectpicker('val'),
         sensors_id: JSON.stringify($('#sensor-name').selectpicker('val')),
         date_range_min: $('#date-range').data('daterangepicker').startDate.format('YYYY-MM-DD'),
         date_range_max: $('#date-range').data('daterangepicker').endDate.format('YYYY-MM-DD'),
         calendar: JSON.stringify($('#calendar').selectpicker('val')),
-        granularity_unit: $('#granularity').selectpicker('val'),   
+        granularity_unit: $('#granularity').selectpicker('val'),
         granularity_frequence: document.getElementById("granularity-value").value,
         mode: document.querySelector('input[name="check-mode"]:checked').value,
         pairwise_comparisons: document.querySelector('input[name="check-pairwise-comparisons"]:checked').value,
         correlations: JSON.stringify($('#correlation').selectpicker('val')),
-        pca: document.getElementById("pca").checked  
+        pca: document.getElementById("pca").checked
     };
     console.log(data)
     $.post("receiver", data, receive_data);
@@ -573,7 +574,7 @@ function create_line_chart(lc_data) {
         xaxis: {
             //rangeslider: {}
             zeroline: false,
-        }, 
+        },
         yaxis: {
             title: {
                 text: 'Flow [m<sup>3</sup>/h]',
@@ -586,7 +587,7 @@ function create_line_chart(lc_data) {
             xanchor: 'center',
             x: 0.5
         },
-        
+
         margin: {
             //l: 50,
             //r: 50,
@@ -594,7 +595,7 @@ function create_line_chart(lc_data) {
             t: 20,
             //pad: 4
         },
-        
+
         yaxis2: {
             zeroline: false,
             title: 'Pressure [bar]',
@@ -622,7 +623,7 @@ function create_line_chart(lc_data) {
 
     $('#collapse-line_chart-section').collapse('show');
     $('#collapse-line_chart').collapse('show');
-    Plotly.newPlot('line_chart', data, layout, config);  
+    Plotly.newPlot('line_chart', data, layout, config);
 };
 
 function create_trace(sensor_id, x, y) {
@@ -630,7 +631,7 @@ function create_trace(sensor_id, x, y) {
     var name = create_sensor_name(sensor_id); // devia ser mais descritivo
     var sensor = sensor_list[sensor_id];
 
-    if(sensor['type'] == 'pressure'){
+    if (sensor['type'] == 'pressure') {
         trace = {
             name: name,
             x: x,
@@ -652,22 +653,22 @@ function create_trace(sensor_id, x, y) {
     return trace;
 };
 
-function fix_z(z){
+function fix_z(z) {
     z_aux = JSON.parse(JSON.stringify(z));
-    z.forEach(function(part, index) {
-        z[index].forEach(function(partz, indexz) {          
+    z.forEach(function (part, index) {
+        z[index].forEach(function (partz, indexz) {
             if (z[index][indexz] == 999999999) {
                 z_aux[index][indexz] = null;
             }
-          });     
+        });
     });
     return z_aux;
 };
 
-function fix_x_y(x){
+function fix_x_y(x) {
     var x_aux = x.slice(0);
-    x.forEach(function(part, index) {
-        x_aux[index] = create_sensor_name(x[index])   
+    x.forEach(function (part, index) {
+        x_aux[index] = create_sensor_name(x[index])
     });
     return x_aux;
 };
@@ -681,8 +682,6 @@ function create_heat_map(type) {
             update_select_correlations_correlogram();
             hm_selected_data = selected_data['heat_map'][selected_correlations[0]];
             hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
-   
-            console.log(selected_data['pairwise_comparisons'])
             if (selected_data['pairwise_comparisons'] == "all pairs") {
                 document.getElementById("btn-swap-columns-corr").disabled = true;
             } else {
@@ -697,13 +696,11 @@ function create_heat_map(type) {
             hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
             break;
         case "change-correlation":
-            var selected_correlation = $('#corr-correlation').selectpicker('val')
+            var selected_correlation = $('#corr-correlation').selectpicker('val');
             hm_selected_data = selected_data['heat_map'][selected_correlation];
             hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
             break;
     }
-
-
 
     var config = {
         responsive: true
@@ -716,7 +713,7 @@ function create_heat_map(type) {
             //b: 0,
             t: 20,
             //pad: 4
-          },
+        },
         yaxis: {
             automargin: true,
             type: 'category'
@@ -733,18 +730,18 @@ function create_heat_map(type) {
         z: hm_variables.z,
         x: hm_variables.x,
         y: fix_x_y(hm_variables.y),
-        
+
         text: hm_variables.text,
         hovertemplate: 'Y: %{y}<extra></extra>' +
-                        '<br>%{text}' + 
-                        '<br>Corr: %{z}',
-        
+            '<br>%{text}' +
+            '<br>Corr: %{z}',
+
         colorscale: 'RdBu',
         //reversescale: true,
         zmin: -1,
         zmax: 1,
-        xgap :	3,
-        ygap :	3,
+        xgap: 3,
+        ygap: 3,
         type: 'heatmap',
         hoverongaps: false
     }];
@@ -754,7 +751,7 @@ function create_heat_map(type) {
     Plotly.newPlot('heat_map', data, layout, config);
 };
 
-function update_select_correlations_correlogram(){
+function update_select_correlations_correlogram() {
     $('#corr-correlation').empty();
     $('#corr-correlation').prop("disabled", false);
     selected_correlations.forEach(key => {
@@ -765,26 +762,26 @@ function update_select_correlations_correlogram(){
     $('#corr-correlation').selectpicker('render');
 }
 
-function create_sensor_name(id){
+function create_sensor_name(id) {
 
     var name = "";
 
     // todo
 
-    if (wmes.infraquinta.hasOwnProperty(id)) {      
+    if (wmes.infraquinta.hasOwnProperty(id)) {
         name = wmes.infraquinta[id]['name_long']
     } else {
-        if (wmes.barreiro.hasOwnProperty(id)){
+        if (wmes.barreiro.hasOwnProperty(id)) {
             name = wmes.barreiro[id]['name_long']
         } else {
             name = wmes.beja[id]['name_long']
         };
     };
-    return name;  
+    return name;
 }
 
 
-function swap_heat_map_data(){
+function swap_heat_map_data() {
 
     var dic = hm_selected_data;
 
@@ -800,28 +797,32 @@ function swap_heat_map_data(){
     });
 
     var dic_aux = {}
-    
+
     dic_aux_keys.forEach(key => {
         var dic_aux_aux = []
         dic_keys.forEach(key1 => {
             var element1;
             dic[key1].forEach(element => {
-                if(element.id == key){
+                if (element.id == key) {
                     element1 = element;
                 };
             });
-            dic_aux_aux.push({'id':key1,'corr':element1.corr, 'dist': element1.dist});
+            dic_aux_aux.push({
+                'id': key1,
+                'corr': element1.corr,
+                'dist': element1.dist
+            });
         });
         dic_aux[key] = dic_aux_aux;
     });
 
     hm_selected_data = dic_aux;
 
-    console.log(hm_selected_data);
+    //console.log(hm_selected_data);
 }
 
 
-function transform_heat_map_data(sortby){
+function transform_heat_map_data(sortby) {
 
     var dic = hm_selected_data;
 
@@ -843,7 +844,7 @@ function transform_heat_map_data(sortby){
     for (var i = 0; i < x.length; i++) {
         x_aux.push(i);
     }
-      
+
     for (var key in dic) {
         if (!dic.hasOwnProperty(key)) {
             continue;
@@ -851,7 +852,7 @@ function transform_heat_map_data(sortby){
 
         var sensor = dic[key];
 
-        if(sortby == "distance"){
+        if (sortby == "distance") {
             sensor.sort(function (a, b) {
                 return a.dist - b.dist;
             });
@@ -873,45 +874,210 @@ function transform_heat_map_data(sortby){
         matrix_text.push(matrix_text_row);
     };
 
-    return {'x':x_aux, 'y':y, 'z': matrix_z, 'text': matrix_text}
+    return {
+        'x': x_aux,
+        'y': y,
+        'z': matrix_z,
+        'text': matrix_text
+    }
 }
 
 
 function init_form(wme) {
     update_form(wme);
-    create_date_range_picker("01/06/2017", "07/06/2017", "01/01/2017", "31/12/2017", 6);
     $('#calendar').selectpicker('refresh');
     $('#calendar').selectpicker('selectAll');
-    $('#granularity').selectpicker('val', '1');
-    document.getElementById("granularity-value").value = 1;
     document.getElementById("check-default").checked = true;
     document.getElementById("check-all-pairs").checked = true;
     $('#correlation-type').selectpicker('refresh');
     $('#correlation-type').selectpicker('selectAll');
     update_correlation();
     $('#correlation').selectpicker('selectAll');
-    $("[name='check-pca'").prop("checked", true);
+    $("[name='check-pca']").prop("checked", true);
 };
 
 
 function create_date_range_picker(startDate, endDate, minDate, maxDate, maxSpan) {
-    $(function () {
-        $('input[name="date-range"]').daterangepicker({
-            locale: {
-                format: 'DD/MM/YYYY'
-            },
-            opens: 'center',
-            "startDate": startDate,
-            "endDate": endDate,
-            "minDate": minDate,
-            "maxDate": maxDate,
-            "maxSpan": {
-                "days": maxSpan
-            }
-        }, function (start, end, label) {
-            //console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+    if (maxSpan > 0) {
+        $(function () {
+            $('input[name="date-range"]').daterangepicker({
+                locale: {
+                    format: 'DD/MM/YYYY'
+                },
+                opens: 'center',
+                "startDate": startDate,
+                "endDate": endDate,
+                "minDate": minDate,
+                "maxDate": maxDate,
+                "maxSpan": {
+                    "days": maxSpan
+                }
+            });
         });
+    } else {
+        $(function () {
+            $('input[name="date-range"]').daterangepicker({
+                locale: {
+                    format: 'DD/MM/YYYY'
+                },
+                opens: 'center',
+                "startDate": startDate,
+                "endDate": endDate,
+                "minDate": minDate,
+                "maxDate": maxDate,
+            });
+        });
+    };
+};
+
+function get_min_max_date(type, dates_string) {
+    var dates = []
+    dates_string.forEach(date_string => {
+        dates.push(convert_date(date_string));
     });
+    var new_date;
+    if (type == "max") {
+        new_date = new Date(Math.max.apply(null, dates));
+    } else {
+        new_date = new Date(Math.min.apply(null, dates));
+    }
+    new_date = new Intl.DateTimeFormat().format(new_date);
+    return new_date;
+}
+
+function convert_date(date) {
+    var res = date.split("/");
+    var date_aux = Date.parse(parseInt(res[2]) + "/" + parseInt(res[1]) + "/" + parseInt(res[0]));
+    return date_aux;
+}
+
+function add_days(date, days) {
+    var result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
+
+function calculate_day_difference(date1, date2) {
+    const diffTime = Math.abs(date2 - date1);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+}
+
+function get_correct_dates(current_start_date, current_end_date, start_date, end_date, maxSpan) {
+    var correct_start;
+    var correct_end;
+    if ((current_start_date < start_date) || (current_start_date > end_date)) {
+        correct_start = start_date;
+    } else {
+        correct_start = current_start_date;
+    }
+    if ((current_end_date > end_date) || (current_end_date < start_date)) {
+        correct_end = end_date;
+    } else {
+        correct_end = current_end_date;
+    }
+    if ((maxSpan > 0) && (calculate_day_difference(correct_start, correct_end) > maxSpan)) {
+        correct_end = add_days(correct_start, maxSpan);
+    }
+    correct_start = new Intl.DateTimeFormat().format(correct_start);
+    correct_end = new Intl.DateTimeFormat().format(correct_end);
+    return [correct_start, correct_end];
+}
+
+function update_granularity_calendar() {
+
+    var granularity_units = [];
+    var date_range_max = [];
+    var date_range_min = [];
+    var maxSpan = 0;
+
+    var selected_sensors = $('#sensor-name').selectpicker('val');
+
+    if (selected_sensors.length > 0) {
+
+        if (sensor_list[selected_sensors[0]] != undefined) {
+
+            $("#date-range").prop("disabled", false);
+            $("#granularity").prop("disabled", false);
+            $('#granularity').selectpicker('refresh');
+            $("#granularity-value").prop("disabled", false);
+
+            selected_sensors.forEach(key => {
+                if ((sensor_list[key].min_date == "nd") || (sensor_list[key].max_date == "nd")) {
+                    maxSpan = 6;
+                } else {
+                    date_range_min.push(sensor_list[key].min_date);
+                    date_range_max.push(sensor_list[key].max_date);
+                }
+                granularity_units.push(parseInt(sensor_list[key]['granularity_unit']));
+            });
+
+            if ((date_range_min.length == 0) || (date_range_max.length == 0)) {
+                var min_date_range = $('#date-range').data('daterangepicker').minDate.format('DD/MM/YYYY');
+                var max_date_range = $('#date-range').data('daterangepicker').maxDate.format('DD/MM/YYYY');
+                var current_min_date = $('#date-range').data('daterangepicker').startDate.format('DD/MM/YYYY');
+                var current_max_date = $('#date-range').data('daterangepicker').endDate.format('DD/MM/YYYY');
+                var correct_dates = get_correct_dates(convert_date(current_min_date), convert_date(current_max_date),
+                    convert_date(min_date_range), convert_date(max_date_range), maxSpan);
+                create_date_range_picker(correct_dates[0], correct_dates[1], min_date_range, max_date_range, maxSpan);
+            } else {
+                var min_date_range = get_min_max_date("max", date_range_min);
+                var max_date_range = get_min_max_date("min", date_range_max);
+                if ($('#date-range').data('daterangepicker') === undefined) {
+                    var correct_dates = get_correct_dates(convert_date(min_date_range), convert_date(max_date_range),
+                        convert_date(min_date_range), convert_date(max_date_range), maxSpan);
+                    create_date_range_picker(correct_dates[0], correct_dates[1], min_date_range, max_date_range, maxSpan);
+                } else {
+                    var current_min_date = $('#date-range').data('daterangepicker').startDate.format('DD/MM/YYYY');
+                    var current_max_date = $('#date-range').data('daterangepicker').endDate.format('DD/MM/YYYY');
+                    var correct_dates = get_correct_dates(convert_date(current_min_date), convert_date(current_max_date),
+                        convert_date(min_date_range), convert_date(max_date_range), maxSpan);
+                    create_date_range_picker(correct_dates[0], correct_dates[1], min_date_range, max_date_range, maxSpan);
+                };
+            };
+
+            var max_granularity_unit = Math.max.apply(null, granularity_units);
+
+            selected_granularity_unit = parseInt($('#granularity').selectpicker('val'));
+            if ((selected_granularity_unit < max_granularity_unit) || !selected_granularity_unit) {
+                $('#granularity').selectpicker('val', max_granularity_unit);
+            };
+
+            switch (max_granularity_unit) {
+                case 0:
+                    $("#granularity option").prop("disabled", false);
+                    $("#granularity option[value='1']").prop("disabled", false);
+                    $("#granularity option[value='2']").prop("disabled", false);
+                    $("#granularity option[value='3']").prop("disabled", false);
+                    break;
+                case 1:
+                    $("#granularity option[value='0']").prop("disabled", true);
+                    $("#granularity option[value='1']").prop("disabled", false);
+                    $("#granularity option[value='2']").prop("disabled", false);
+                    $("#granularity option[value='3']").prop("disabled", false);
+                    break;
+                case 2:
+                    $("#granularity option[value='0']").prop("disabled", true);
+                    $("#granularity option[value='1']").prop("disabled", true);
+                    $("#granularity option[value='2']").prop("disabled", false);
+                    $("#granularity option[value='3']").prop("disabled", false);
+                    break;
+                case 3:
+                    $("#granularity option[value='0']").prop("disabled", true);
+                    $("#granularity option[value='1']").prop("disabled", true);
+                    $("#granularity option[value='2']").prop("disabled", true);
+                    $("#granularity option[value='3']").prop("disabled", false);
+                    break;
+            };
+        };
+
+    } else {
+        $("#granularity").prop("disabled", true);
+        $("#granularity-value").prop("disabled", true);
+        $("#date-range").prop("disabled", true);
+    };
+    $('#granularity').selectpicker('refresh');
+    $('#granularity').selectpicker('render');
 };
 
 
