@@ -25,11 +25,13 @@ def worker():
     if(request_type=="json"):
         data = get_json()
         data_string = json.dumps(data)
+        
         return data_string
     
     else:
         data = process_data_request(request)
         data_string = json.dumps(data)
+        print(data_string)
         return data_string
 
 if __name__ == '__main__':

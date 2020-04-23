@@ -18,5 +18,12 @@ def calculate_pearson(df1, df2):
         min_len = min(len_array1, len_array2)     
         array1 = array1[:min_len]
         array2 = array2[:min_len]
-    return stats.pearsonr(array1, array2)[0]
+        
+    value = stats.pearsonr(array1, array2)
+    print(value)
+    
+    if np.isnan(value[0]):
+        return 999999999
+    else:
+        return value[0]
 

@@ -743,7 +743,7 @@ function create_heat_map(type) {
         xgap: 3,
         ygap: 3,
         type: 'heatmap',
-        hoverongaps: false
+        //hoverongaps: false
     }];
 
     $('#collapse-heat_map-section').collapse('show');
@@ -866,6 +866,11 @@ function transform_heat_map_data(sortby) {
         var matrix_text_row = []
 
         sensor.forEach(element => {
+
+            if(element.corr == 999999999){
+                element.corr = null;
+            };
+
             matrix_z_row.push(element.corr);
             matrix_text_row.push('X: ' + create_sensor_name(element.id) + '<br>Dist: ' + element.dist)
         });
