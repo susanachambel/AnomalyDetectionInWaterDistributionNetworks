@@ -30,6 +30,8 @@ def process_data_request(request):
     
     dfs = {}
     
+    # TODO (tratar da situação do barreiro e de beja)
+    
     if(wme == 'infraquinta'):
         dfs = get_data(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence)    
         line_chart_data = dfs_to_json(dfs)

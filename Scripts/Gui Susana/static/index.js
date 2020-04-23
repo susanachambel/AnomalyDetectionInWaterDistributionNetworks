@@ -628,7 +628,7 @@ function create_line_chart(lc_data) {
 
 function create_trace(sensor_id, x, y) {
     var trace;
-    var name = create_sensor_name(sensor_id); // devia ser mais descritivo
+    var name = create_sensor_name(sensor_id);
     var sensor = sensor_list[sensor_id];
 
     if (sensor['type'] == 'pressure') {
@@ -651,18 +651,6 @@ function create_trace(sensor_id, x, y) {
     };
 
     return trace;
-};
-
-function fix_z(z) {
-    z_aux = JSON.parse(JSON.stringify(z));
-    z.forEach(function (part, index) {
-        z[index].forEach(function (partz, indexz) {
-            if (z[index][indexz] == 999999999) {
-                z_aux[index][indexz] = null;
-            }
-        });
-    });
-    return z_aux;
 };
 
 function fix_x_y(x) {
@@ -766,7 +754,7 @@ function create_sensor_name(id) {
 
     var name = "";
 
-    // todo
+    // todo (se calhar devia ser mais descritivo)
 
     if (wmes.infraquinta.hasOwnProperty(id)) {
         name = wmes.infraquinta[id]['name_long']
@@ -865,13 +853,19 @@ function transform_heat_map_data(sortby) {
         var matrix_z_row = []
         var matrix_text_row = []
 
+        // TODO (Não a correlação do sensor com ele próprio)
+
         sensor.forEach(element => {
 
+            var element_aux;
+
             if(element.corr == 999999999){
-                element.corr = null;
+                element_aux = null;
+            } else {
+                element_aux = element.corr;
             };
 
-            matrix_z_row.push(element.corr);
+            matrix_z_row.push(element_aux);
             matrix_text_row.push('X: ' + create_sensor_name(element.id) + '<br>Dist: ' + element.dist)
         });
 
