@@ -9,10 +9,10 @@ import pandas as pd
 from configuration import *
 from data_selection import *
 from correlation import *
+from graph import *
 import json
 import numpy as np
 from itertools import combinations, product
-from graph import *
 
 def process_data_request(request):
     
@@ -33,9 +33,7 @@ def process_data_request(request):
     if(wme == 'infraquinta'):
         dfs = get_data(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence)    
         line_chart_data = dfs_to_json(dfs)
-        #heat_map_data = dfs_analysis(dfs, mode, pairwise_comparisons, correlations, pca)
-        #heat_map_data = dfs_analysis_2(dfs, mode, pairwise_comparisons, correlations, pca)
-        heat_map_data = dfs_analysis_3(wme, dfs, mode, pairwise_comparisons, correlations, pca)
+        heat_map_data = dfs_analysis(wme, dfs, mode, pairwise_comparisons, correlations, pca)
         data = {'wme':wme ,'line_chart': line_chart_data, 'heat_map': heat_map_data,
                 'selected_sensor_list':sensors_id, 'pairwise_comparisons':pairwise_comparisons}
         
@@ -134,7 +132,7 @@ def find_node_by_sensor(sensor):
             node = myGraph.find_node(sensor['name_long'])
         else:
             node = sensor['name_long']
-            
+           
     return node
            
 
@@ -148,7 +146,7 @@ def find_distance_sensors(sensor_id1, sensor_id2):
     except KeyError:
         return 999999999
 
-def dfs_analysis_3(wme, dfs, mode, pairwise_comparisons, correlations, pca):
+def dfs_analysis(wme, dfs, mode, pairwise_comparisons, correlations, pca):
      
     result = {}
     
@@ -205,14 +203,14 @@ def dfs_analysis_3(wme, dfs, mode, pairwise_comparisons, correlations, pca):
             dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':pearson_correlation})
     
     result['pearson'] = dic
-          
+
     return result
 
-#dist = calculate_distances(list(map(str, range(0,3))))       
-        
-#dfs = get_data('infraquinta', ['29', '30', '31'], "2017-02-01", "2017-02-07", ["0","1","2","3","4","5","6"], 'hours', 1);
-#print(dfs['29'].describe())
-#data = dfs_analysis_3('infraquinta', dfs, "", "all pairs", "", "")
-#print(data)
+def test_website_functions():
+    dist = calculate_distances(list(map(str, range(0,3))))       
+    dfs = get_data('infraquinta', ['29', '30', '31'], "2017-02-01", "2017-02-07", ["0","1","2","3","4","5","6"], 'hours', 1);
+    print(dfs['29'].describe())
+    data = dfs_analysis('infraquinta', dfs, "", "all pairs", "", "")
+    print(data)
 
 
