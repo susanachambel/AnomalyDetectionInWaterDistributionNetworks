@@ -418,17 +418,26 @@
                     <select id="corr-order-by" class="selectpicker form-control">
                       <option value="distance">Distance</option>
                       <option value="correlation">Correlation</option>
-                    </select>
-                    
+                    </select>        
                   </div>
                   <div class="col-md-auto mt-2 pl-0 align-self-center text-center">
                     <small class="form-text text-muted mb-1">Swap</small>
-                    <button id="btn-swap-columns-corr" class="btn border-0 btn-light" type="button"
+                    <button id="btn-swap-columns-corr" class="btn border-0 btn-light btn-outline-dark" type="button"
                       title="Swap Columns">
                       <i class="fa fa-random"></i>
                     </button>
                   </div>
+                  <div class="col-md-auto mt-2 pl-0 align-self-center text-center">
+                    <small class="form-text text-muted mb-1">Lock</small>
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                      <label id="btn-lock-columns-corr-label" class="btn border-0 btn-light btn-outline-dark" title="Lock Columns">
+                        <input id="btn-lock-columns-corr" type="checkbox" autocomplete="off">
+                        <i id="btn-lock-columns-corr-image" class="fa fa-lock-open"></i>
+                      </label>
+                    </div>
+                  </div>
                 </div>
+
                 <div id="heat_map"></div>
               </div>
             </div>

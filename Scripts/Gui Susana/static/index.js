@@ -55,6 +55,18 @@ window.onload = function () {
         create_heat_map("swap");
     });
 
+    document.getElementById("btn-lock-columns-corr").addEventListener("click", function () {
+        if(this.checked){
+            document.getElementById("btn-lock-columns-corr-image").className = "fa fa-lock";
+            document.getElementById("btn-lock-columns-corr-label").title = "Unlock Columns";
+            create_heat_map("lock");
+        } else {
+            document.getElementById("btn-lock-columns-corr-image").className = "fa fa-lock-open";
+            document.getElementById("btn-lock-columns-corr-label").title = "Lock Columns";
+            create_heat_map("unlock");
+        };
+    });
+
     document.getElementById("source").addEventListener("change", function () {
         update_form(this.value);
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
@@ -415,10 +427,12 @@ function create_correlation_option(value) {
             subtext = "Tuples";
             name = "DCCA";
             break;
-        case "dcca-ln":
+        /*
+            case "dcca-ln":
             subtext = "Tuples";
             name = "DCCA-ln";
             break;
+        */
         case "pearson":
             subtext = "Temporal";
             name = "Pearson";
@@ -435,8 +449,8 @@ function update_correlation() {
 
     var selection = $('#correlation-type').val();
     var correlation_temporal = [
-        ["dcca", "DCCA"],
-        ["dcca-ln", "DCCA-ln"]
+        ["dcca", "DCCA"]
+        //["dcca-ln", "DCCA-ln"]
     ];
     var correlation_tuples = [
         ["pearson", "Pearson"],
@@ -515,6 +529,8 @@ function submit() {
 function receive_data(data, status) {
 
     selected_data = JSON.parse(data);
+
+    console.log(selected_data)
 
     if (selected_data.hasOwnProperty('line_chart')) {
         create_line_chart(selected_data["line_chart"]);
@@ -664,17 +680,31 @@ function fix_x_y(x) {
 function create_heat_map(type) {
 
     var hm_variables;
+    var showticklabels = false;
+    var ticks = '';
 
     switch (type) {
         case "create":
             update_select_correlations_correlogram();
             hm_selected_data = selected_data['heat_map'][selected_correlations[0]];
-            hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
-            if (selected_data['pairwise_comparisons'] == "all pairs") {
+            if(document.getElementById("btn-lock-columns-corr").checked){
+                hm_variables = transform_heat_map_data("lock");
+                showticklabels = true;
+                ticks = 'outside';
                 document.getElementById("btn-swap-columns-corr").disabled = true;
+                $('#corr-order-by').prop('disabled', true);
+                $('#corr-order-by').selectpicker('refresh');
             } else {
-                document.getElementById("btn-swap-columns-corr").disabled = false;
-            }
+                hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
+                $('#corr-order-by').prop('disabled', false);
+                $('#corr-order-by').selectpicker('refresh');
+                if (selected_data['pairwise_comparisons'] == "all pairs") {
+                    document.getElementById("btn-swap-columns-corr").disabled = true;
+                } else {
+                    document.getElementById("btn-swap-columns-corr").disabled = false;
+                };
+            };
+
             break;
         case "swap":
             swap_heat_map_data();
@@ -686,7 +716,33 @@ function create_heat_map(type) {
         case "change-correlation":
             var selected_correlation = $('#corr-correlation').selectpicker('val');
             hm_selected_data = selected_data['heat_map'][selected_correlation];
+            if(document.getElementById("btn-lock-columns-corr").checked){
+                hm_variables = transform_heat_map_data("lock");
+                showticklabels = true;
+                ticks = 'outside';
+            } else {
+                hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
+            }
+            break;
+        case "lock":
+            hm_variables = transform_heat_map_data("lock");
+            showticklabels = true;
+            ticks = 'outside';
+            document.getElementById("btn-swap-columns-corr").disabled = true;
+            $('#corr-order-by').prop('disabled', true);
+            $('#corr-order-by').selectpicker('refresh');
+            break;
+        case "unlock":
+            var selected_correlation = $('#corr-correlation').selectpicker('val');
+            hm_selected_data = selected_data['heat_map'][selected_correlation];
             hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
+            $('#corr-order-by').prop('disabled', false);
+            $('#corr-order-by').selectpicker('refresh');
+            if (selected_data['pairwise_comparisons'] == "all pairs") {
+                document.getElementById("btn-swap-columns-corr").disabled = true;
+            } else {
+                document.getElementById("btn-swap-columns-corr").disabled = false;
+            };
             break;
     }
 
@@ -708,26 +764,24 @@ function create_heat_map(type) {
         },
         xaxis: {
             automargin: true,
-            type: 'category',
-            showticklabels: false,
-            ticks: ''
+            showticklabels: showticklabels,
+            ticks: ticks
         }
     };
 
+    console.log(fix_x_y(hm_variables.y))
+
     var data = [{
         z: hm_variables.z,
-        x: hm_variables.x,
+        x: fix_x_y(hm_variables.x),
         y: fix_x_y(hm_variables.y),
 
         text: hm_variables.text,
-        hovertemplate: 'Y: %{y}<extra></extra>' +
-            '<br>%{text}' +
-            '<br>Corr: %{z}',
-
-        colorscale: 'RdBu',
+        hovertemplate: hm_variables.hovertemplate,
+        colorscale: hm_variables.colorscale,
         //reversescale: true,
-        zmin: -1,
-        zmax: 1,
+        zmin: hm_variables.zmin,
+        zmax: hm_variables.zmax,
         xgap: 3,
         ygap: 3,
         type: 'heatmap',
@@ -806,78 +860,196 @@ function swap_heat_map_data() {
 
     hm_selected_data = dic_aux;
 
+    console.log(dic_aux)
+
     //console.log(hm_selected_data);
 }
 
 
-function transform_heat_map_data(sortby) {
 
-    var dic = hm_selected_data;
+function transform_heat_map_data_2() {
 
-    var matrix_z = [];
-    var matrix_text = []
+    var dic = {0: [{id:"2", dist: 3037.821, corr: -0.016},{id:"4", dist: 3037.821, corr: -0.016}], 
+    1: [{id:"2", dist: 1702.6, corr: 0.01},{id:"4", dist: 3037.821, corr: -0.016}], 
+    3: [{id: "2", dist: 0.406, corr: -0.957},{id:"4", dist: 3037.821, corr: -0.016}]};
 
+    console.log(dic);
     var y = Object.keys(dic);
     y.sort(function (a, b) {
         return parseInt(a) - parseInt(b);
     });
 
     var x = [];
-    dic[y[0]].forEach(element => {
-        x.push(element.id)
+
+    dic[0].forEach(element => {
+       x.push(element.id) 
     });
 
-    var x_aux = []
+    var matrix_z = [];
+    var matrix_text = [];
 
-    for (var i = 0; i < x.length; i++) {
-        x_aux.push(i);
-    }
+    y.forEach(ykey => {
+        var matrix_z_row = [];
+        var matrix_text_row = [];
+        x.forEach(xkey => {   
+            dic[parseInt(ykey)].forEach(yelement => {
+                if(yelement.id == xkey){
+                    var yelement_aux;
+                    if(yelement.corr == 999999999){
+                        yelement_aux = null;
+                    } else {
+                        yelement_aux = element.corr;
+                    };
+                    matrix_z_row.push(yelement_aux);
+                    matrix_text_row.push('X: ' + create_sensor_name(yelement.id) + '<br>Dist: ' + yelement.dist + ' m');
+                };
+            });     
+        });
+        matrix_z.push(matrix_z_row);
+        matrix_text.push(matrix_text_row);     
+    });
 
-    for (var key in dic) {
-        if (!dic.hasOwnProperty(key)) {
-            continue;
-        };
+    console.log(matrix_z)
+    console.log(matrix_text)
+    
+}
 
-        var sensor = dic[key];
+//transform_heat_map_data_2()
 
-        if (sortby == "distance") {
-            sensor.sort(function (a, b) {
-                return a.dist - b.dist;
-            });
-        } else {
-            sensor.sort(function (a, b) {
-                return a.corr - b.corr;
-            });
-        }
 
-        var matrix_z_row = []
-        var matrix_text_row = []
+function transform_heat_map_data(sortby) {
 
-        // TODO (Não a correlação do sensor com ele próprio)
+    var dic = hm_selected_data;
+    console.log(dic);
 
-        sensor.forEach(element => {
+    var matrix_z = [];
+    var matrix_text = [];
+    var y = [];
+    var x = [];
+    var x_aux = [];
 
-            var element_aux;
-
-            if(element.corr == 999999999){
-                element_aux = null;
-            } else {
-                element_aux = element.corr;
-            };
-
-            matrix_z_row.push(element_aux);
-            matrix_text_row.push('X: ' + create_sensor_name(element.id) + '<br>Dist: ' + element.dist)
+    if(sortby == "lock"){
+        y = Object.keys(dic);
+        y.sort(function (a, b) {
+            return parseInt(a) - parseInt(b);
+        });
+    
+        dic[Object.keys(dic)[0]].forEach(element => {
+           x.push(element.id);
         });
 
-        matrix_z.push(matrix_z_row);
-        matrix_text.push(matrix_text_row);
+        x.sort(function (a, b) {
+            return parseInt(a) - parseInt(b);
+        });
+    
+        y.forEach(ykey => {
+            var matrix_z_row = [];
+            var matrix_text_row = [];
+            x.forEach(xkey => {   
+                dic[parseInt(ykey)].forEach(yelement => {
+                    if(yelement.id == xkey){
+                        var yelement_aux;
+                        if(yelement.corr == 999999999){
+                            yelement_aux = null;
+                        } else {
+                            yelement_aux = yelement.corr;
+                        };
+                        matrix_z_row.push(yelement_aux);
+                        matrix_text_row.push('X: ' + create_sensor_name(yelement.id) + '<br>Dist: ' + yelement.dist + ' m');
+                    };
+                });     
+            });
+            matrix_z.push(matrix_z_row);
+            matrix_text.push(matrix_text_row);     
+        });
+
+        x_aux = x;
+
+    } else {
+    
+        y = Object.keys(dic);
+        y.sort(function (a, b) {
+            return parseInt(a) - parseInt(b);
+        });
+    
+        dic[y[0]].forEach(element => {
+            x.push(element.id)
+        });
+    
+        for (var i = 0; i < x.length; i++) {
+            x_aux.push(i);
+        }
+    
+        for (var key in dic) {
+            if (!dic.hasOwnProperty(key)) {
+                continue;
+            };
+    
+            var sensor = dic[key];
+    
+            if (sortby == "distance") {
+                sensor.sort(function (a, b) {
+                    return a.dist - b.dist;
+                });
+            } else {
+                sensor.sort(function (a, b) {
+                    return a.corr - b.corr;
+                });
+            }
+    
+            var matrix_z_row = []
+            var matrix_text_row = []
+    
+            // TODO (Não a correlação do sensor com ele próprio)
+    
+            sensor.forEach(element => {
+                var element_aux;
+                if(element.corr == 999999999){
+                    element_aux = null;
+                } else {
+                    element_aux = element.corr;
+                };
+                matrix_z_row.push(element_aux);
+                matrix_text_row.push('X: ' + create_sensor_name(element.id) + '<br>Dist: ' + element.dist + ' m')
+            });
+    
+            matrix_z.push(matrix_z_row);
+            matrix_text.push(matrix_text_row);
+        };
+
+    }
+
+    console.log(x_aux)
+    console.log(y)
+    console.log(matrix_z)
+
+    var zmin = -1;
+    var zmax = 1;
+    var colorscale = 'RdBu';
+    var array_z = [];
+    var hovertemplate = 'Y: %{y}<extra></extra>' + '<br>%{text}' + '<br>Corr: %{z}';
+
+    if ($('#corr-correlation').selectpicker('val') == "kullback-leibler"){
+        matrix_z.forEach(row_z => {
+            row_z.forEach(element_z => {
+                array_z.push(element_z);
+            });    
+        });
+       zmin = Math.min.apply(null, array_z);
+       zmax = Math.max.apply(null, array_z);
+       colorscale = 'Greens';
+       hovertemplate = 'Y: %{y}<extra></extra>' + '<br>%{text}' + '<br>Corr: %{z} bits';
     };
 
     return {
         'x': x_aux,
         'y': y,
         'z': matrix_z,
-        'text': matrix_text
+        'text': matrix_text,
+        'zmin': zmin,
+        'zmax': zmax,
+        'colorscale': colorscale,
+        'hovertemplate': hovertemplate
     }
 }
 

@@ -31,7 +31,7 @@ def worker():
     else:
         data = process_data_request(request)
         data_string = json.dumps(data)
-        print(data_string)
+        #print(data_string)
         return data_string
 
 if __name__ == '__main__':

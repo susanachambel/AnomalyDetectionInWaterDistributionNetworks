@@ -35,7 +35,7 @@ def process_data_request(request):
     if(wme == 'infraquinta'):
         dfs = get_data(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence)    
         line_chart_data = dfs_to_json(dfs)
-        heat_map_data = dfs_analysis(wme, dfs, mode, pairwise_comparisons, correlations, pca)
+        heat_map_data = dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca)
         data = {'wme':wme ,'line_chart': line_chart_data, 'heat_map': heat_map_data,
                 'selected_sensor_list':sensors_id, 'pairwise_comparisons':pairwise_comparisons}
         
@@ -205,14 +205,83 @@ def dfs_analysis(wme, dfs, mode, pairwise_comparisons, correlations, pca):
             dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':pearson_correlation})
     
     result['pearson'] = dic
+    result['dcca'] = dic
 
     return result
 
+def dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca):
+        
+    for key in dfs:
+        df = dfs[key]
+        dfs[key] = df.dropna()
+    
+    df_keys = list(dfs.keys())
+    
+    dics = {}
+    for corr in correlations:
+        dic = {}
+        dics[corr] = dic
+        
+    if (pairwise_comparisons == "all pairs"):
+    
+        combos = combinations(df_keys, 2)
+        
+        for df_key in df_keys:
+            for key, dic in dics.items(): 
+                if(key == "kullback-leibler"):
+                    dic[df_key] = [{'id':df_key, 'dist':0, 'corr':0}]
+                else:
+                    dic[df_key] = [{'id':df_key, 'dist':0, 'corr':1}]
+                
+        for combo in combos:
+            
+            results_corr = calculate_correlations(dfs[combo[0]], dfs[combo[1]], correlations)
+    
+            distance = 1
+            
+            if (wme == 'infraquinta'):  
+                distance = find_distance_sensors(combo[0], combo[1])
+                  
+            for key, dic in dics.items():
+                dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':results_corr[key]})
+                dic[combo[1]].append({'id':combo[0], 'dist':distance, 'corr':results_corr[key]}) 
+        
+    else:
+        
+        json_data = get_json()
+        sensors_flow = []
+        sensors_pressure = []
+        
+        for df_key in df_keys:          
+            sensor_type = json_data[wme][df_key]['type']        
+            if (sensor_type == 'flow'):
+                sensors_flow.append(df_key)
+                
+                for key, dic in dics.items(): 
+                    dic[df_key] = []
+
+            else:
+                sensors_pressure.append(df_key)
+        
+        combos = product(sensors_flow, sensors_pressure)
+        
+        for combo in combos:
+            
+            results_corr = calculate_correlations(dfs[combo[0]], dfs[combo[1]], correlations)
+            distance = 1
+  
+            if (wme == 'infraquinta'):  
+                distance = find_distance_sensors(combo[0], combo[1])
+            
+            for key, dic in dics.items():
+                dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':results_corr[key]})
+            
+    return dics
+
 def test_website_functions():
-    dist = calculate_distances(list(map(str, range(0,3))))       
-    dfs = get_data('infraquinta', ['29', '30', '31'], "2017-02-01", "2017-02-07", ["0","1","2","3","4","5","6"], 'hours', 1);
-    print(dfs['29'].describe())
-    data = dfs_analysis('infraquinta', dfs, "", "all pairs", "", "")
+    #dist = calculate_distances(list(map(str, range(0,3))))       
+    dfs = get_data('infraquinta', ['1', '2', '3'], "2017-02-01", "2017-02-07", ["0","1","2","3","4","5","6"], 'hours', 1);
+    data = dfs_analysis_2('infraquinta', dfs, "", "pair-wise", ["pearson", "dcca", "kullback-leibler"], "")
     print(data)
 
-
+#test_website_functions()
