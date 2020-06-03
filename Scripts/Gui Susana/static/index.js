@@ -56,7 +56,7 @@ window.onload = function () {
     });
 
     document.getElementById("btn-lock-columns-corr").addEventListener("click", function () {
-        if(this.checked){
+        if (this.checked) {
             document.getElementById("btn-lock-columns-corr-image").className = "fa fa-lock";
             document.getElementById("btn-lock-columns-corr-label").title = "Unlock Columns";
             create_heat_map("lock");
@@ -82,6 +82,23 @@ window.onload = function () {
             };
             update_sensors(false, false);
         });
+    });
+
+    document.getElementById("mode-default").addEventListener("change", function () {
+        if (document.getElementById("form-target").classList.contains('was-validated') === true) {
+            validate_check_box("mode", 1);
+        };
+    });
+
+    document.getElementById("mode-chunks").addEventListener("change", function () {
+        if (document.getElementById("form-target").classList.contains('was-validated') === true) {
+            validate_check_box("mode", 1);
+        };
+        if(document.getElementById("mode-chunks").checked){
+            $('#collapse-granularity-chunks').collapse('show');
+        } else {
+            $('#collapse-granularity-chunks').collapse('hide');
+        };
     });
 
     document.querySelectorAll("input[name=check-sensor-group]").forEach(box => {
@@ -118,11 +135,22 @@ window.onload = function () {
             validate_selection("correlation-type", 1);
         };
         update_correlation();
+        update_dcca_parameterization();
     });
 
     document.getElementById("correlation").addEventListener("change", function () {
         if (document.getElementById("form-target").classList.contains('was-validated') === true) {
             validate_selection("correlation", 1);
+        };
+        update_dcca_parameterization();
+    });
+
+    document.getElementById("dcca-parameterization-default").addEventListener("change", function () {
+        if (this.checked) {
+            document.getElementById("dcca-parameterization-value").value = 2;
+            document.getElementById("dcca-parameterization-value").disabled = true;
+        } else {
+            document.getElementById("dcca-parameterization-value").disabled = false;
         };
     });
 
@@ -177,6 +205,7 @@ function compress_expand_visualization(type) {
 
 function perform_manual_validation() {
     validate_check_box("focus", 1);
+    validate_check_box("mode", 1);
     validate_check_box("sensor-group", 1);
     validate_selection("sensor-type", 1);
     validate_selection("sensor-name", 2);
@@ -427,12 +456,12 @@ function create_correlation_option(value) {
             subtext = "Tuples";
             name = "DCCA";
             break;
-        /*
-            case "dcca-ln":
-            subtext = "Tuples";
-            name = "DCCA-ln";
-            break;
-        */
+            /*
+                case "dcca-ln":
+                subtext = "Tuples";
+                name = "DCCA-ln";
+                break;
+            */
         case "pearson":
             subtext = "Temporal";
             name = "Pearson";
@@ -491,6 +520,17 @@ function update_correlation() {
     $('#correlation').selectpicker('render');
 }
 
+function update_dcca_parameterization(){
+    if(document.querySelector('#correlation option[value="dcca"]')){
+        if (document.querySelector('#correlation option[value="dcca"]').selected){
+            $('#collapse-dcca-parameterization').collapse('show');
+        } else {
+            $('#collapse-dcca-parameterization').collapse('hide');
+        };
+    } else {
+        $('#collapse-dcca-parameterization').collapse('hide');
+    };
+};
 
 function submit() {
 
@@ -516,7 +556,7 @@ function submit() {
         calendar: JSON.stringify($('#calendar').selectpicker('val')),
         granularity_unit: $('#granularity').selectpicker('val'),
         granularity_frequence: document.getElementById("granularity-value").value,
-        mode: document.querySelector('input[name="check-mode"]:checked').value,
+        //mode: document.querySelector('input[name="check-mode"]:checked').value,
         pairwise_comparisons: document.querySelector('input[name="check-pairwise-comparisons"]:checked').value,
         correlations: JSON.stringify($('#correlation').selectpicker('val')),
         pca: document.getElementById("pca").checked
@@ -687,7 +727,7 @@ function create_heat_map(type) {
         case "create":
             update_select_correlations_correlogram();
             hm_selected_data = selected_data['heat_map'][selected_correlations[0]];
-            if(document.getElementById("btn-lock-columns-corr").checked){
+            if (document.getElementById("btn-lock-columns-corr").checked) {
                 hm_variables = transform_heat_map_data("lock");
                 showticklabels = true;
                 ticks = 'outside';
@@ -704,7 +744,6 @@ function create_heat_map(type) {
                     document.getElementById("btn-swap-columns-corr").disabled = false;
                 };
             };
-
             break;
         case "swap":
             swap_heat_map_data();
@@ -716,7 +755,7 @@ function create_heat_map(type) {
         case "change-correlation":
             var selected_correlation = $('#corr-correlation').selectpicker('val');
             hm_selected_data = selected_data['heat_map'][selected_correlation];
-            if(document.getElementById("btn-lock-columns-corr").checked){
+            if (document.getElementById("btn-lock-columns-corr").checked) {
                 hm_variables = transform_heat_map_data("lock");
                 showticklabels = true;
                 ticks = 'outside';
@@ -865,58 +904,6 @@ function swap_heat_map_data() {
     //console.log(hm_selected_data);
 }
 
-
-
-function transform_heat_map_data_2() {
-
-    var dic = {0: [{id:"2", dist: 3037.821, corr: -0.016},{id:"4", dist: 3037.821, corr: -0.016}], 
-    1: [{id:"2", dist: 1702.6, corr: 0.01},{id:"4", dist: 3037.821, corr: -0.016}], 
-    3: [{id: "2", dist: 0.406, corr: -0.957},{id:"4", dist: 3037.821, corr: -0.016}]};
-
-    console.log(dic);
-    var y = Object.keys(dic);
-    y.sort(function (a, b) {
-        return parseInt(a) - parseInt(b);
-    });
-
-    var x = [];
-
-    dic[0].forEach(element => {
-       x.push(element.id) 
-    });
-
-    var matrix_z = [];
-    var matrix_text = [];
-
-    y.forEach(ykey => {
-        var matrix_z_row = [];
-        var matrix_text_row = [];
-        x.forEach(xkey => {   
-            dic[parseInt(ykey)].forEach(yelement => {
-                if(yelement.id == xkey){
-                    var yelement_aux;
-                    if(yelement.corr == 999999999){
-                        yelement_aux = null;
-                    } else {
-                        yelement_aux = element.corr;
-                    };
-                    matrix_z_row.push(yelement_aux);
-                    matrix_text_row.push('X: ' + create_sensor_name(yelement.id) + '<br>Dist: ' + yelement.dist + ' m');
-                };
-            });     
-        });
-        matrix_z.push(matrix_z_row);
-        matrix_text.push(matrix_text_row);     
-    });
-
-    console.log(matrix_z)
-    console.log(matrix_text)
-    
-}
-
-//transform_heat_map_data_2()
-
-
 function transform_heat_map_data(sortby) {
 
     var dic = hm_selected_data;
@@ -928,28 +915,28 @@ function transform_heat_map_data(sortby) {
     var x = [];
     var x_aux = [];
 
-    if(sortby == "lock"){
+    if (sortby == "lock") {
         y = Object.keys(dic);
         y.sort(function (a, b) {
             return parseInt(a) - parseInt(b);
         });
-    
+
         dic[Object.keys(dic)[0]].forEach(element => {
-           x.push(element.id);
+            x.push(element.id);
         });
 
         x.sort(function (a, b) {
             return parseInt(a) - parseInt(b);
         });
-    
+
         y.forEach(ykey => {
             var matrix_z_row = [];
             var matrix_text_row = [];
-            x.forEach(xkey => {   
+            x.forEach(xkey => {
                 dic[parseInt(ykey)].forEach(yelement => {
-                    if(yelement.id == xkey){
+                    if (yelement.id == xkey) {
                         var yelement_aux;
-                        if(yelement.corr == 999999999){
+                        if (yelement.corr == 999999999) {
                             yelement_aux = null;
                         } else {
                             yelement_aux = yelement.corr;
@@ -957,36 +944,36 @@ function transform_heat_map_data(sortby) {
                         matrix_z_row.push(yelement_aux);
                         matrix_text_row.push('X: ' + create_sensor_name(yelement.id) + '<br>Dist: ' + yelement.dist + ' m');
                     };
-                });     
+                });
             });
             matrix_z.push(matrix_z_row);
-            matrix_text.push(matrix_text_row);     
+            matrix_text.push(matrix_text_row);
         });
 
         x_aux = x;
 
     } else {
-    
+
         y = Object.keys(dic);
         y.sort(function (a, b) {
             return parseInt(a) - parseInt(b);
         });
-    
+
         dic[y[0]].forEach(element => {
             x.push(element.id)
         });
-    
+
         for (var i = 0; i < x.length; i++) {
             x_aux.push(i);
         }
-    
+
         for (var key in dic) {
             if (!dic.hasOwnProperty(key)) {
                 continue;
             };
-    
+
             var sensor = dic[key];
-    
+
             if (sortby == "distance") {
                 sensor.sort(function (a, b) {
                     return a.dist - b.dist;
@@ -996,15 +983,15 @@ function transform_heat_map_data(sortby) {
                     return a.corr - b.corr;
                 });
             }
-    
+
             var matrix_z_row = []
             var matrix_text_row = []
-    
+
             // TODO (Não a correlação do sensor com ele próprio)
-    
+
             sensor.forEach(element => {
                 var element_aux;
-                if(element.corr == 999999999){
+                if (element.corr == 999999999) {
                     element_aux = null;
                 } else {
                     element_aux = element.corr;
@@ -1012,7 +999,7 @@ function transform_heat_map_data(sortby) {
                 matrix_z_row.push(element_aux);
                 matrix_text_row.push('X: ' + create_sensor_name(element.id) + '<br>Dist: ' + element.dist + ' m')
             });
-    
+
             matrix_z.push(matrix_z_row);
             matrix_text.push(matrix_text_row);
         };
@@ -1029,16 +1016,16 @@ function transform_heat_map_data(sortby) {
     var array_z = [];
     var hovertemplate = 'Y: %{y}<extra></extra>' + '<br>%{text}' + '<br>Corr: %{z}';
 
-    if ($('#corr-correlation').selectpicker('val') == "kullback-leibler"){
+    if ($('#corr-correlation').selectpicker('val') == "kullback-leibler") {
         matrix_z.forEach(row_z => {
             row_z.forEach(element_z => {
                 array_z.push(element_z);
-            });    
+            });
         });
-       zmin = Math.min.apply(null, array_z);
-       zmax = Math.max.apply(null, array_z);
-       colorscale = 'Greens';
-       hovertemplate = 'Y: %{y}<extra></extra>' + '<br>%{text}' + '<br>Corr: %{z} bits';
+        zmin = Math.min.apply(null, array_z);
+        zmax = Math.max.apply(null, array_z);
+        colorscale = 'Greens';
+        hovertemplate = 'Y: %{y}<extra></extra>' + '<br>%{text}' + '<br>Corr: %{z} bits';
     };
 
     return {
@@ -1058,7 +1045,7 @@ function init_form(wme) {
     update_form(wme);
     $('#calendar').selectpicker('refresh');
     $('#calendar').selectpicker('selectAll');
-    document.getElementById("check-default").checked = true;
+    document.getElementById("mode-default").checked = true;
     document.getElementById("check-all-pairs").checked = true;
     $('#correlation-type').selectpicker('refresh');
     $('#correlation-type').selectpicker('selectAll');

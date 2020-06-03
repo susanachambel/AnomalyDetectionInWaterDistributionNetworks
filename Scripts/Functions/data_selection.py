@@ -13,8 +13,7 @@ from datetime import datetime
     2. Transforms the date column as index
     Returns: df ready to use 
 """
-def process_df(df):
-    
+def process_df(df):   
     df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d %H:%M:%S')
     df.index = df['date']
     del df['date']

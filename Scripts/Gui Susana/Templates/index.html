@@ -77,7 +77,8 @@
           <div class="card-header">
             <p class="d-inline mr-0">Visualization Settings</p>
             <button id="btn-redo-visualization-settings"
-              class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo" btn-type="redo">
+              class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo"
+              btn-type="redo">
               <i class="fa fa-redo-alt"></i>
             </button>
           </div>
@@ -153,7 +154,8 @@
             <div class="card-header">
               <p class="d-inline mr-0">Analysis Settings</p>
               <button id="btn-redo-analysis-settings"
-                class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo" btn-type="redo">
+                class="btn btn-outline-dark border-0 btn-sm rounded-circle d-inline" type="button" title="Redo"
+                btn-type="redo">
                 <i class="fa fa-redo-alt"></i>
               </button>
             </div>
@@ -261,7 +263,8 @@
                         </select>
                       </div>
                       <div class="col mt-2 pl-0">
-                        <input class="form-control" type="number" min="1" value="1" id="granularity-value" required>
+                        <input class="form-control" type="number" min="1" max="30" value="1" id="granularity-value"
+                          required>
                         <div class="invalid-feedback text-muted">
                           Choose a positive number
                         </div>
@@ -290,14 +293,38 @@
                   <label class="text-dark font-weight-bold">Mode</label>
                   <div>
                     <div class="form-check form-check-inline">
-                      <input class="form-check-input" type="radio" name="check-mode" id="check-default" value="default"
-                        checked>
-                      <label class="form-check-label" for="check-default">Default</label>
+                      <input class="form-check-input" type="checkbox" id="mode-default" value="default"
+                        name="check-mode">
+                      <label class="form-check-label" for="mode-default">Default</label>
                     </div>
                     <div class="form-check form-check-inline">
-                      <input class="form-check-input" type="radio" name="check-mode" id="check-parametric"
-                        value="parametric">
-                      <label class="form-check-label" for="check-parametric">Parametric</label>
+                      <input class="form-check-input" type="checkbox" id="mode-chunks" value="chunks" name="check-mode">
+                      <label class="form-check-label" for="mode-chunks">Chunks</label>
+                    </div>
+                  </div>
+                  <div id="div-mode">
+                  </div>
+                </div>
+
+                <div class="form-group collapse" id="collapse-granularity-chunks">
+                  <label class="mb-0 text-dark font-weight-bold" for="granularity-chunks">Chunks' Granularity</label>
+                  <div class="container-fluid pl-0 pr-0">
+                    <div class="row ml-0">
+                      <div class="col mt-2 pl-0">
+                        <select id="granularity-chunks" class="selectpicker form-control" required>
+                          <option value="0">Minutes</option>
+                          <option value="1">Hours</option>
+                          <option value="2">Days</option>
+                          <option value="3" selected>Months</option>
+                        </select>
+                      </div>
+                      <div class="col mt-2 pl-0">
+                        <input class="form-control" type="number" min="1" value="1" id="granularity-chunks-value"
+                          required>
+                        <div class="invalid-feedback text-muted">
+                          Choose a positive number
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -332,6 +359,29 @@
                   </select>
                 </div>
 
+                <div class="form-group collapse" id="collapse-dcca-parameterization">
+                  <label class="mb-0 text-dark font-weight-bold" for="granularity-chunks">DCCA
+                    Parameterization</label>
+                  <div class="container-fluid pl-0 pr-0">
+                    <div class="row justify-content-md-start align-items-center ml-0">
+                      <div class="col-md-auto mt-2 pl-0">
+                        <div class="form-check form-check-inline">
+                          <input class="form-check-input" type="checkbox" id="dcca-parameterization-default"
+                            value="chunks" name="check-dcca-parameterization" checked>
+                          <label class="form-check-label" for="dcca-parameterization-default">Default <i>k</i> value</label>
+                        </div>
+                      </div>
+                      <div class="col-md-auto mt-2 pl-0">
+                        <input class="form-control" type="number" min="2" max="10" value="2"
+                          id="dcca-parameterization-value" required disabled>
+                        <div class="invalid-feedback text-muted">
+                          Choose a number between 2 and 10
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="form-group mb-0">
                   <label class="text-dark font-weight-bold">PCA</label>
                   <div>
@@ -347,7 +397,7 @@
             <hr class="my-1 mr-4 ml-4">
 
             <div class="card-body">
-              <button id="run-btn" class="btn btn-info btn-block text-white" type="submit">Run Query</button>
+              <button id="run-btn" class="btn btn-primary btn-block text-white" type="submit">Run Query</button>
             </div>
 
           </div>
@@ -411,14 +461,14 @@
                       <option value="flow">Flow</option>
                       <option value="pressure">Pressure</option>
                     </select>
-                    
+
                   </div>
                   <div class="col-md-auto mt-2 pl-0 text-center">
                     <small class="form-text text-muted mb-1">Order By</small>
                     <select id="corr-order-by" class="selectpicker form-control">
                       <option value="distance">Distance</option>
                       <option value="correlation">Correlation</option>
-                    </select>        
+                    </select>
                   </div>
                   <div class="col-md-auto mt-2 pl-0 align-self-center text-center">
                     <small class="form-text text-muted mb-1">Swap</small>
@@ -430,7 +480,8 @@
                   <div class="col-md-auto mt-2 pl-0 align-self-center text-center">
                     <small class="form-text text-muted mb-1">Lock</small>
                     <div class="btn-group-toggle" data-toggle="buttons">
-                      <label id="btn-lock-columns-corr-label" class="btn border-0 btn-light btn-outline-dark" title="Lock Columns">
+                      <label id="btn-lock-columns-corr-label" class="btn border-0 btn-light btn-outline-dark"
+                        title="Lock Columns">
                         <input id="btn-lock-columns-corr" type="checkbox" autocomplete="off">
                         <i id="btn-lock-columns-corr-image" class="fa fa-lock-open"></i>
                       </label>

@@ -23,7 +23,8 @@ def process_data_request(request):
     calendar = json.loads(request.form['calendar'])
     granularity_unit = request.form['granularity_unit']
     granularity_frequence = int(request.form['granularity_frequence'])
-    mode = request.form['mode']
+    #mode = request.form['mode']
+    mode = ""
     pairwise_comparisons = request.form['pairwise_comparisons']
     correlations = json.loads(request.form['correlations'])
     pca = request.form['pca']
@@ -148,67 +149,6 @@ def find_distance_sensors(sensor_id1, sensor_id2):
     except KeyError:
         return 999999999
 
-def dfs_analysis(wme, dfs, mode, pairwise_comparisons, correlations, pca):
-     
-    result = {}
-    
-    for key in dfs:
-        df = dfs[key]
-        dfs[key] = df.dropna()
-    
-    df_keys = list(dfs.keys())
-    
-    dic = {}
-    
-    if (pairwise_comparisons == "all pairs"):
-    
-        combos = combinations(df_keys, 2)
-        
-        for df_key in df_keys:
-            dic[df_key] = [{'id':df_key, 'dist':0, 'corr':1}]
-        
-        for combo in combos:
-            
-            pearson_correlation = round(calculate_pearson(dfs[combo[0]], dfs[combo[1]]),3)
-            distance = 1
-            
-            if (wme == 'infraquinta'):  
-                distance = find_distance_sensors(combo[0], combo[1])
-                              
-            dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':pearson_correlation})
-            dic[combo[1]].append({'id':combo[0], 'dist':distance, 'corr':pearson_correlation})
-        
-    else:
-        
-        json_data = get_json()
-        sensors_flow = []
-        sensors_pressure = []
-        
-        for df_key in df_keys:          
-            sensor_type = json_data[wme][df_key]['type']        
-            if (sensor_type == 'flow'):
-                sensors_flow.append(df_key)
-                dic[df_key] = []
-            else:
-                sensors_pressure.append(df_key)
-        
-        combos = product(sensors_flow, sensors_pressure)
-        
-        for combo in combos:
-            
-            pearson_correlation = round(calculate_pearson(dfs[combo[0]], dfs[combo[1]]),3)
-            distance = 1
-            
-            if (wme == 'infraquinta'):  
-                distance = find_distance_sensors(combo[0], combo[1])
-                
-            dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':pearson_correlation})
-    
-    result['pearson'] = dic
-    result['dcca'] = dic
-
-    return result
-
 def dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca):
         
     for key in dfs:
@@ -244,7 +184,9 @@ def dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca):
                   
             for key, dic in dics.items():
                 dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':results_corr[key]})
-                dic[combo[1]].append({'id':combo[0], 'dist':distance, 'corr':results_corr[key]}) 
+                dic[combo[1]].append({'id':combo[0], 'dist':distance, 'corr':results_corr[key]})
+                # TODO aqui tenho de fazer uma exceção para o KL porque o resultado não é o mesmo
+                # Acho que basta fazer se a key for igual ao KL, então vai buscar os resultados do key-reverse
         
     else:
         
@@ -275,6 +217,7 @@ def dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca):
             
             for key, dic in dics.items():
                 dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':results_corr[key]})
+                # TODO aqui também temos a situação do KL, mas não sei como a resolver
             
     return dics
 
