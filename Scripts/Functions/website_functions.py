@@ -23,10 +23,12 @@ def process_data_request(request):
     calendar = json.loads(request.form['calendar'])
     granularity_unit = request.form['granularity_unit']
     granularity_frequence = int(request.form['granularity_frequence'])
-    #mode = request.form['mode']
-    mode = ""
+    mode = json.loads(request.form['mode'])
+    chunks_granularity_unit = request.form['chunks_granularity_unit']
+    chunks_granularity_frequence = int(request.form['chunks_granularity_frequence'])   
     pairwise_comparisons = request.form['pairwise_comparisons']
     correlations = json.loads(request.form['correlations'])
+    dcca_k = int(request.form['dcca_k'])
     pca = request.form['pca']
     
     dfs = {}

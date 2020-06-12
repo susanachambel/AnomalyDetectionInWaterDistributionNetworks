@@ -547,6 +547,12 @@ function submit() {
         behavior: 'smooth'
     });
 
+    var selected_modes_aux = document.querySelectorAll('input[name="check-mode"]:checked')
+    var selected_modes = []
+    selected_modes_aux.forEach(mode => {
+        selected_modes.push(mode.value)
+    });
+
     var data = {
         request_type: "form",
         wme: $('#source').selectpicker('val'),
@@ -556,11 +562,15 @@ function submit() {
         calendar: JSON.stringify($('#calendar').selectpicker('val')),
         granularity_unit: $('#granularity').selectpicker('val'),
         granularity_frequence: document.getElementById("granularity-value").value,
-        //mode: document.querySelector('input[name="check-mode"]:checked').value,
+        mode: JSON.stringify(selected_modes),
+        chunks_granularity_unit: $('#granularity-chunks').selectpicker('val'),
+        chunks_granularity_frequence: document.getElementById("granularity-chunks-value").value,
         pairwise_comparisons: document.querySelector('input[name="check-pairwise-comparisons"]:checked').value,
         correlations: JSON.stringify($('#correlation').selectpicker('val')),
+        dcca_k: document.getElementById("dcca-parameterization-value").value,
         pca: document.getElementById("pca").checked
     };
+    
     console.log(data)
     $.post("receiver", data, receive_data);
     event.preventDefault();
@@ -583,7 +593,7 @@ function receive_data(data, status) {
 
     activate_form();
 
-    $('#collapse-visualization-settings-card').collapse('show');
+    //$('#collapse-visualization-settings-card').collapse('show');
     compress_expand_visualization("expand");
     $("#visualizaition-help-text-card-body").remove();
 };
@@ -1046,6 +1056,14 @@ function init_form(wme) {
     $('#calendar').selectpicker('refresh');
     $('#calendar').selectpicker('selectAll');
     document.getElementById("mode-default").checked = true;
+    document.getElementById("mode-chunks").checked = false;
+    $('#collapse-granularity-chunks').collapse('hide');
+    $('#granularity-chunks').selectpicker('val', '3');
+    $('#granularity-chunks').selectpicker('refresh');
+    document.getElementById("dcca-parameterization-default").checked = true;
+    document.getElementById("dcca-parameterization-value").value = 2; 
+    document.getElementById("dcca-parameterization-value").disabled = true;    
+    document.getElementById("granularity-chunks-value").value = 1;
     document.getElementById("check-all-pairs").checked = true;
     $('#correlation-type').selectpicker('refresh');
     $('#correlation-type').selectpicker('selectAll');
