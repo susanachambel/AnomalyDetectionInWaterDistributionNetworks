@@ -114,11 +114,10 @@ def calculate_dcca(x1, x2, k):
     Pearson correlation -> pearson
     Kullback-Leibler divergence -> kl 
 """
-def calculate_correlations(df1, df2, corr_array):    
+def calculate_correlations(df1, df2, corr_array, k):    
     x1, x2 = get_common_datapoints(df1, df2)        
     # TODO Não esquecer que tratar o caso em que não existem pontos em comum        
-    result = {} 
-    k = 2
+    result = {}
     # TODO tratar do problema do KL não ser espelhado     
     for corr in corr_array:
         if (corr == "pearson"):      
@@ -138,7 +137,9 @@ def test_correlation():
     df1 = select_data(path_init, "infraquinta", "interpolated", 1, '2017-01-01 00:00:00', '2017-12-30 23:59:59')
     df2 = select_data(path_init, "infraquinta", "interpolated", 3, '2017-01-01 00:00:00', '2017-12-30 23:59:59')
     
-    result = calculate_correlations(df1, df2, ["pearson","kullback-leibler", "dcca"])
+    result = calculate_correlations(df1, df2, ["pearson","kullback-leibler", "dcca"], 2)
+    
+    print(result)
     
     kl_pq = result["kullback-leibler"]
     print('KL(P || Q): %.4f bits' % kl_pq)
@@ -187,6 +188,8 @@ def calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k
                 
     df_aux = pd.DataFrame(index=dates, columns=[])
     df_concat = pd.concat([df_aux, df1, df2], axis=1, sort=False)
+        
+    #print(df_concat)
     
     for chunk_limit,chunk in df_concat.resample(get_granularity(chunk_granularity[0], chunk_granularity[1])):
         chunk = chunk.dropna()  
@@ -235,9 +238,11 @@ def test_correlation_line():
 
     k = 2
      
-    dates, chunk_limits = get_dates_chunk_limits(date_min, date_max, granularity, chunk_granularity)  
+    dates, chunk_limits = get_dates_chunk_limits(date_min, date_max, granularity, chunk_granularity)
     
     result = calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k)
+    
+    print(result)
     
     plt.plot(result["kullback-leibler"])
     plt.plot(result["kullback-leibler-reverse"])

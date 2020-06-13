@@ -90,7 +90,7 @@
                 class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle" type="button"
                 data-toggle="collapse" data-target="#collapse-visualization-settings" aria-expanded="false"
                 aria-controls="collapse-visualization-settings" title="Hide" btn-type="collapse">
-                <i class="fa fa-chevron-up"></i>
+                <i class="fa fa-chevron-down"></i>
               </button>
               <p class="card-text">Choose which sensors you want to see</p>
 
@@ -165,7 +165,7 @@
               <button id="btn-collapse-target" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
                 type="button" data-toggle="collapse" data-target="#collapse-target" aria-expanded="false"
                 aria-controls="collapse-target" title="Hide" btn-type="collapse">
-                <i class="fa fa-chevron-up"></i>
+                <i class="fa fa-chevron-down"></i>
               </button>
               <p class="card-text mb-0">Choose the data</p>
 
@@ -283,7 +283,7 @@
               <button id="btn-collapse-analysis" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
                 type="button" data-toggle="collapse" data-target="#collapse-analysis" aria-expanded="false"
                 aria-controls="collapse-analysis" title="Hide" btn-type="collapse">
-                <i class="fa fa-chevron-up"></i>
+                <i class="fa fa-chevron-down"></i>
               </button>
               <p class="card-text mb-0">Choose how to analyse the data</p>
 
@@ -368,7 +368,8 @@
                         <div class="form-check form-check-inline">
                           <input class="form-check-input" type="checkbox" id="dcca-parameterization-default"
                             value="chunks" name="check-dcca-parameterization" checked>
-                          <label class="form-check-label" for="dcca-parameterization-default">Default <i>k</i> value</label>
+                          <label class="form-check-label" for="dcca-parameterization-default">Default <i>k</i>
+                            value</label>
                         </div>
                       </div>
                       <div class="col-md-auto mt-2 pl-0">
@@ -391,6 +392,7 @@
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
 
@@ -435,7 +437,7 @@
               <button id="btn-collapse-line_chart" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
                 type="button" data-toggle="collapse" data-target="#collapse-line_chart" aria-expanded="false"
                 aria-controls="collapse-line_chart" title="Hide" btn-type="collapse">
-                <i class="fa fa-chevron-up"></i>
+                <i class="fa fa-chevron-down"></i>
               </button>
               <div class="collapse show" id="collapse-line_chart">
                 <div id="line_chart"></div>
@@ -450,7 +452,7 @@
               <button id="btn-collapse-heat_map" class="btn btn-outline-dark border-0 btn-sm d-inline rounded-circle"
                 type="button" data-toggle="collapse" data-target="#collapse-heat_map" aria-expanded="false"
                 aria-controls="collapse-heat_map" title="Hide" btn-type="collapse">
-                <i class="fa fa-chevron-up"></i>
+                <i class="fa fa-chevron-down"></i>
               </button>
 
               <div class="collapse show" id="collapse-heat_map">
@@ -487,9 +489,28 @@
                       </label>
                     </div>
                   </div>
+
+                  <div class="col-md-auto mt-2 pl-0 align-self-center text-center collapse" id="collapse-btn-enable-chunks-corr">
+                    <small class="form-text text-muted mb-1">Chunks</small>
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                      <label id="btn-enable-chunks-corr-label" class="btn border-0 btn-light btn-outline-dark"
+                        title="Show Chunks">
+                        <input id="btn-enable-chunks-corr" type="checkbox" autocomplete="off">
+                        <i id="btn-enable-chunks-corr-image" class="fa fa-eye-slash"></i>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="col-lg-3 mt-2 pl-0 align-self-center text-center collapse" id="collapse-range-chunk-limit">
+                    <small class="form-text text-muted mb-1" id="range-chunk-limit-current">Time Point</small>
+                    <input type="range" class="custom-range" min="0" max="5" step="1" value="0"
+                      id="range-chunk-limit">
+                  </div>
+
                 </div>
 
                 <div id="heat_map"></div>
+
               </div>
             </div>
           </div>

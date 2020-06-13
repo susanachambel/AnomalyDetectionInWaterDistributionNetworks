@@ -13,6 +13,7 @@ from graph import *
 import json
 import numpy as np
 from itertools import combinations, product
+import copy
 
 def process_data_request(request):
     
@@ -36,11 +37,26 @@ def process_data_request(request):
     # TODO (tratar da situação do barreiro e de beja)
     
     if(wme == 'infraquinta'):
-        dfs = get_data(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence)    
-        line_chart_data = dfs_to_json(dfs)
-        heat_map_data = dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca)
-        data = {'wme':wme ,'line_chart': line_chart_data, 'heat_map': heat_map_data,
-                'selected_sensor_list':sensors_id, 'pairwise_comparisons':pairwise_comparisons}
+        dfs = get_data(wme, sensors_id, date_range_min, date_range_max, calendar, granularity_unit, granularity_frequence)   
+        dfs1 = copy.deepcopy(dfs)
+             
+        data = {}
+        
+        data['wme'] = wme
+        data['line_chart'] = dfs_to_json(dfs)
+        
+        if "default" in mode:
+            data['heat_map'] = dfs_analysis(wme, dfs, mode, pairwise_comparisons, correlations, dcca_k, pca)
+        
+        if "chunks" in mode:
+            granularity = [granularity_unit, granularity_frequence]
+            chunks_granularity = [chunks_granularity_unit, chunks_granularity_frequence]
+            heat_map_data_chunks, chunks = dfs_analysis_chunks(wme, dfs1, date_range_min, date_range_max, granularity, chunks_granularity, pairwise_comparisons, correlations, dcca_k, pca)     
+            data['heat_map_chunks'] = heat_map_data_chunks
+            data['chunks'] = chunks
+        
+        data['selected_sensor_list'] = sensors_id
+        data['pairwise_comparisons'] = pairwise_comparisons
         
         #data = {'wme':wme ,'line_chart': line_chart_data, 'selected_sensor_list':sensors_id}
         return data
@@ -151,7 +167,7 @@ def find_distance_sensors(sensor_id1, sensor_id2):
     except KeyError:
         return 999999999
 
-def dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca):
+def dfs_analysis(wme, dfs, mode, pairwise_comparisons, correlations, dcca_k, pca):
         
     for key in dfs:
         df = dfs[key]
@@ -177,7 +193,7 @@ def dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca):
                 
         for combo in combos:
             
-            results_corr = calculate_correlations(dfs[combo[0]], dfs[combo[1]], correlations)
+            results_corr = calculate_correlations(dfs[combo[0]], dfs[combo[1]], correlations, dcca_k)
     
             distance = 1
             
@@ -211,7 +227,7 @@ def dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca):
         
         for combo in combos:
             
-            results_corr = calculate_correlations(dfs[combo[0]], dfs[combo[1]], correlations)
+            results_corr = calculate_correlations(dfs[combo[0]], dfs[combo[1]], correlations, dcca_k)
             distance = 1
   
             if (wme == 'infraquinta'):  
@@ -223,10 +239,103 @@ def dfs_analysis_2(wme, dfs, mode, pairwise_comparisons, correlations, pca):
             
     return dics
 
+def dfs_analysis_chunks(wme, dfs, date_range_min, date_range_max, granularity, chunk_granularity, pairwise_comparisons, correlations, dcca_k, pca):
+    
+    
+    date_range_min += " 00:00:00"
+    date_range_max += " 23:59:59"
+        
+    dates, chunk_limits = get_dates_chunk_limits(date_range_min, date_range_max, granularity, chunk_granularity)
+    
+            
+    for key in dfs:
+        df = dfs[key]
+        dfs[key] = df.dropna()
+    
+    df_keys = list(dfs.keys())
+    
+    dics = {}
+    for corr in correlations:
+        dic = {}
+        dics[corr] = dic
+        
+    if (pairwise_comparisons == "all pairs"):
+    
+        combos = combinations(df_keys, 2)
+        
+        for df_key in df_keys:
+            for key, dic in dics.items(): 
+                if(key == "kullback-leibler"):
+                    dic[df_key] = [{'id':df_key, 'dist':0, 'corr':0}]
+                else:
+                    dic[df_key] = [{'id':df_key, 'dist':0, 'corr':1}]
+                
+        for combo in combos:
+            
+            
+            results_corr = calculate_correlation_line(dfs[combo[0]], dfs[combo[1]], correlations, dates, chunk_granularity, dcca_k)
+            
+            distance = 1
+            
+            if (wme == 'infraquinta'):  
+                distance = find_distance_sensors(combo[0], combo[1])
+                  
+            for key, dic in dics.items():
+                dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':results_corr[key]})
+                dic[combo[1]].append({'id':combo[0], 'dist':distance, 'corr':results_corr[key]})
+                # TODO aqui tenho de fazer uma exceção para o KL porque o resultado não é o mesmo
+                # Acho que basta fazer se a key for igual ao KL, então vai buscar os resultados do key-reverse
+        
+    else:
+        
+        json_data = get_json()
+        sensors_flow = []
+        sensors_pressure = []
+        
+        for df_key in df_keys:          
+            sensor_type = json_data[wme][df_key]['type']        
+            if (sensor_type == 'flow'):
+                sensors_flow.append(df_key)
+                
+                for key, dic in dics.items(): 
+                    dic[df_key] = []
+
+            else:
+                sensors_pressure.append(df_key)
+        
+        combos = product(sensors_flow, sensors_pressure)
+        
+        for combo in combos:
+            
+            results_corr = calculate_correlation_line(dfs[combo[0]], dfs[combo[1]], correlations, dates, chunk_granularity, dcca_k)
+            distance = 1
+  
+            if (wme == 'infraquinta'):  
+                distance = find_distance_sensors(combo[0], combo[1])
+            
+            for key, dic in dics.items():
+                dic[combo[0]].append({'id':combo[1], 'dist':distance, 'corr':results_corr[key]})
+                # TODO aqui também temos a situação do KL, mas não sei como a resolver
+    
+    
+    return dics, chunk_limits
+
 def test_website_functions():
     #dist = calculate_distances(list(map(str, range(0,3))))       
-    dfs = get_data('infraquinta', ['1', '2', '3'], "2017-02-01", "2017-02-07", ["0","1","2","3","4","5","6"], 'hours', 1);
-    data = dfs_analysis_2('infraquinta', dfs, "", "pair-wise", ["pearson", "dcca", "kullback-leibler"], "")
+    dfs = get_data('infraquinta', ['1', '2', '3'], "2017-01-01", "2017-12-30", ["0","1","2","3","4","5","6"], '0', 1);
+    
+    granularity_unit = '0'
+    granularity_frequence = 1
+    
+    chunks_granularity_unit = '3'
+    chunks_granularity_frequence = 1
+    
+    granularity = [granularity_unit, granularity_frequence]
+    chunks_granularity = [chunks_granularity_unit, chunks_granularity_frequence]
+    
+    
+    data, chunks = dfs_analysis_chunks('infraquinta', dfs, "2017-01-01", "2017-12-30", granularity, chunks_granularity, "all-pairs", ["pearson", "dcca", "kullback-leibler"], 2, "")
     print(data)
+    print(chunks)
 
 #test_website_functions()

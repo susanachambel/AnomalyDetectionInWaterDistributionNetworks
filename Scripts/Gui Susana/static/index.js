@@ -1,6 +1,7 @@
 var wmes = 0;
 var sensor_list = 0;
 var selected_correlations = 0;
+var chunks = 0;
 var hm_selected_data;
 var selected_data = 0;
 
@@ -32,6 +33,14 @@ window.onload = function () {
     add_event_listener_collapsers("visualization-settings", false);
     add_event_listener_collapsers("line_chart", true);
     add_event_listener_collapsers("heat_map", true);
+
+    var slider = document.getElementById("range-chunk-limit");
+    var output = document.getElementById("range-chunk-limit-current");
+
+    slider.oninput = function() {
+        output.innerHTML = "Time Point: " + "<b>" + chunks[parseInt(this.value)] + "</b>";
+        create_heat_map("change-correlation");
+    };
 
     document.getElementById("btn-redo-analysis-settings").addEventListener("click", function () {
         init_form($('#source').selectpicker('val'));
@@ -66,6 +75,21 @@ window.onload = function () {
             create_heat_map("unlock");
         };
     });
+
+    document.getElementById("btn-enable-chunks-corr").addEventListener("click", function () {
+        if (this.checked) {
+            document.getElementById("btn-enable-chunks-corr-image").className = "fa fa-eye";
+            document.getElementById("btn-enable-chunks-corr-label").title = "Hide Chunks";
+            $('#collapse-range-chunk-limit').collapse('show');          
+            create_heat_map("change-correlation");
+        } else {
+            document.getElementById("btn-enable-chunks-corr-image").className = "fa fa-eye-slash";
+            document.getElementById("btn-enable-chunks-corr-label").title = "Show Chunks";
+            $('#collapse-range-chunk-limit').collapse('hide');
+            create_heat_map("change-correlation");
+        };
+    });
+ 
 
     document.getElementById("source").addEventListener("change", function () {
         update_form(this.value);
@@ -167,17 +191,17 @@ window.onload = function () {
 
 function add_event_listener_collapsers(name, is_chart) {
     $('#collapse-' + name).on('hidden.bs.collapse', function () {
-        $("#btn-collapse-" + name).html('<i class="fa fa-chevron-down"></i>');
+        $("#btn-collapse-" + name).html('<i class="fa fa-chevron-up"></i>');
         document.getElementById('btn-collapse-' + name).title = 'Show';
         if (is_chart) {
             Plotly.Plots.resize(name);
         };
     });
     $('#collapse-' + name).on('shown.bs.collapse', function () {
-        $("#btn-collapse-" + name).html('<i class="fa fa-chevron-up"></i>');
+        $("#btn-collapse-" + name).html('<i class="fa fa-chevron-down"></i>');
         document.getElementById('btn-collapse-' + name).title = 'Hide';
         if ((name == "target") || (name == "analysis")) {
-            compress_expand_visualization("compress")
+            compress_expand_visualization("compress");
         }
         if (is_chart) {
             Plotly.Plots.resize(name);
@@ -576,6 +600,14 @@ function submit() {
     event.preventDefault();
 };
 
+function set_range_chunk_limit(min, max, value){
+    var range_chunk = document.getElementById("range-chunk-limit");
+    range_chunk.min = min;
+    range_chunk.max = max
+    range_chunk.value = value;
+    document.getElementById("range-chunk-limit-current").innerHTML = "Time Point: " + "<b>" + chunks[0] + "</b>";
+};
+
 function receive_data(data, status) {
 
     selected_data = JSON.parse(data);
@@ -586,9 +618,42 @@ function receive_data(data, status) {
         create_line_chart(selected_data["line_chart"]);
     };
 
-    if (selected_data.hasOwnProperty('heat_map')) {
-        selected_correlations = Object.keys(selected_data["heat_map"])
+    if(selected_data.hasOwnProperty('heat_map') && selected_data.hasOwnProperty('heat_map_chunks')){
+        $('#collapse-btn-enable-chunks-corr').collapse('show');
+        $('#collapse-range-chunk-limit').collapse('hide');
+        document.getElementById("btn-enable-chunks-corr-label").classList.remove('active');
+        document.getElementById("btn-enable-chunks-corr").checked = false;
+        document.getElementById("btn-enable-chunks-corr-image").className = "fa fa-eye-slash";
+        document.getElementById("btn-enable-chunks-corr-label").title = "Show Chunks";
+        selected_correlations = Object.keys(selected_data["heat_map"]);
+        chunks = selected_data["chunks"];
+        set_range_chunk_limit(0, chunks.length-1, 0);
         create_heat_map("create");
+    } else {
+        if(selected_data.hasOwnProperty('heat_map') && !selected_data.hasOwnProperty('heat_map_chunks')){
+            $('#collapse-btn-enable-chunks-corr').collapse('hide');
+            $('#collapse-range-chunk-limit').collapse('hide');
+            document.getElementById("btn-enable-chunks-corr-label").classList.remove('active');
+            document.getElementById("btn-enable-chunks-corr").checked = false;
+            document.getElementById("btn-enable-chunks-corr-image").className = "fa fa-eye-slash";
+            document.getElementById("btn-enable-chunks-corr-label").title = "Show Chunks";
+
+            selected_correlations = Object.keys(selected_data["heat_map"]);
+            chunks = 0;
+            create_heat_map("create");
+        } else {
+            $('#collapse-btn-enable-chunks-corr').collapse('hide');
+            $('#collapse-range-chunk-limit').collapse('show');
+            document.getElementById("btn-enable-chunks-corr-label").classList.add('active');
+            document.getElementById("btn-enable-chunks-corr").checked = true;
+            document.getElementById("btn-enable-chunks-corr-image").className = "fa fa-eye";
+            document.getElementById("btn-enable-chunks-corr-label").title = "Hide Chunks";
+
+            selected_correlations = Object.keys(selected_data["heat_map_chunks"]);
+            chunks = selected_data["chunks"];
+            set_range_chunk_limit(0, chunks.length-1, 0);
+            create_heat_map("create");
+        };
     };
 
     activate_form();
@@ -727,6 +792,26 @@ function fix_x_y(x) {
     return x_aux;
 };
 
+function get_hm_selected_data(selected_correlation_aux){   
+    var selected_chunk_value = document.getElementById("range-chunk-limit").value;
+    if (document.getElementById("btn-enable-chunks-corr").checked) {
+        hm_selected_data_aux = JSON.parse(JSON.stringify(selected_data['heat_map_chunks'][selected_correlation_aux]));
+        for (var key in hm_selected_data_aux) {
+            if (!hm_selected_data_aux.hasOwnProperty(key)) {
+                continue;
+            };
+            hm_selected_data_aux[key].forEach(hm_selected_data_aux_element => {
+                if(Array.isArray(hm_selected_data_aux_element['corr'])){
+                    hm_selected_data_aux_element['corr'] = hm_selected_data_aux_element['corr'][parseInt(selected_chunk_value)];
+                };                
+            });
+        };
+        return hm_selected_data_aux;
+    } else {
+        return selected_data['heat_map'][selected_correlation_aux];
+    };
+};
+
 function create_heat_map(type) {
 
     var hm_variables;
@@ -736,7 +821,9 @@ function create_heat_map(type) {
     switch (type) {
         case "create":
             update_select_correlations_correlogram();
-            hm_selected_data = selected_data['heat_map'][selected_correlations[0]];
+            //hm_selected_data = selected_data['heat_map'][selected_correlations[0]];
+            hm_selected_data = get_hm_selected_data(selected_correlations[0])
+            console.log(hm_selected_data);
             if (document.getElementById("btn-lock-columns-corr").checked) {
                 hm_variables = transform_heat_map_data("lock");
                 showticklabels = true;
@@ -764,7 +851,8 @@ function create_heat_map(type) {
             break;
         case "change-correlation":
             var selected_correlation = $('#corr-correlation').selectpicker('val');
-            hm_selected_data = selected_data['heat_map'][selected_correlation];
+            //hm_selected_data = selected_data['heat_map'][selected_correlation];
+            hm_selected_data = get_hm_selected_data(selected_correlation)
             if (document.getElementById("btn-lock-columns-corr").checked) {
                 hm_variables = transform_heat_map_data("lock");
                 showticklabels = true;
@@ -783,7 +871,8 @@ function create_heat_map(type) {
             break;
         case "unlock":
             var selected_correlation = $('#corr-correlation').selectpicker('val');
-            hm_selected_data = selected_data['heat_map'][selected_correlation];
+            //hm_selected_data = selected_data['heat_map'][selected_correlation];
+            hm_selected_data = get_hm_selected_data(selected_correlation);
             hm_variables = transform_heat_map_data($('#corr-order-by').selectpicker('val'));
             $('#corr-order-by').prop('disabled', false);
             $('#corr-order-by').selectpicker('refresh');
@@ -794,6 +883,8 @@ function create_heat_map(type) {
             };
             break;
     }
+
+    
 
     var config = {
         responsive: true
@@ -817,8 +908,6 @@ function create_heat_map(type) {
             ticks: ticks
         }
     };
-
-    console.log(fix_x_y(hm_variables.y))
 
     var data = [{
         z: hm_variables.z,
@@ -909,15 +998,12 @@ function swap_heat_map_data() {
 
     hm_selected_data = dic_aux;
 
-    console.log(dic_aux)
-
     //console.log(hm_selected_data);
 }
 
 function transform_heat_map_data(sortby) {
 
     var dic = hm_selected_data;
-    console.log(dic);
 
     var matrix_z = [];
     var matrix_text = [];
@@ -1015,10 +1101,6 @@ function transform_heat_map_data(sortby) {
         };
 
     }
-
-    console.log(x_aux)
-    console.log(y)
-    console.log(matrix_z)
 
     var zmin = -1;
     var zmax = 1;
