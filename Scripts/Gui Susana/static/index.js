@@ -191,20 +191,24 @@ window.onload = function () {
 
 function add_event_listener_collapsers(name, is_chart) {
     $('#collapse-' + name).on('hidden.bs.collapse', function () {
-        $("#btn-collapse-" + name).html('<i class="fa fa-chevron-up"></i>');
-        document.getElementById('btn-collapse-' + name).title = 'Show';
-        if (is_chart) {
-            Plotly.Plots.resize(name);
+        if($('#collapse-' + name).is( ":hidden" )){
+            $("#btn-collapse-" + name).html('<i class="fa fa-chevron-up"></i>');
+            document.getElementById('btn-collapse-' + name).title = 'Show';
+            if (is_chart) {
+                Plotly.Plots.resize(name);
+            };
         };
     });
     $('#collapse-' + name).on('shown.bs.collapse', function () {
-        $("#btn-collapse-" + name).html('<i class="fa fa-chevron-down"></i>');
-        document.getElementById('btn-collapse-' + name).title = 'Hide';
-        if ((name == "target") || (name == "analysis")) {
-            compress_expand_visualization("compress");
-        }
-        if (is_chart) {
-            Plotly.Plots.resize(name);
+        if($('#collapse-' + name).is( ":visible" )){
+            $("#btn-collapse-" + name).html('<i class="fa fa-chevron-down"></i>');
+            document.getElementById('btn-collapse-' + name).title = 'Hide';
+            if ((name == "target") || (name == "analysis")) {
+                compress_expand_visualization("compress");
+            };
+            if (is_chart) {
+                Plotly.Plots.resize(name);
+            };
         };
     });
 };
