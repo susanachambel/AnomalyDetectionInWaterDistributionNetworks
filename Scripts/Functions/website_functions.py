@@ -240,14 +240,12 @@ def dfs_analysis(wme, dfs, mode, pairwise_comparisons, correlations, dcca_k, pca
     return dics
 
 def dfs_analysis_chunks(wme, dfs, date_range_min, date_range_max, granularity, chunk_granularity, pairwise_comparisons, correlations, dcca_k, pca):
-    
-    
+        
     date_range_min += " 00:00:00"
     date_range_max += " 23:59:59"
         
     dates, chunk_limits = get_dates_chunk_limits(date_range_min, date_range_max, granularity, chunk_granularity)
-    
-            
+                
     for key in dfs:
         df = dfs[key]
         dfs[key] = df.dropna()

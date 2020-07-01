@@ -1402,19 +1402,26 @@ function activate_form() {
 
     if (focus.real == false) {
         $("[value='real'][name='check-focus']").prop("disabled", true);
-    }
+    };
 
     if (focus.simulated == false) {
         $("[value='simulated'][name='check-focus']").prop("disabled", true);
-    }
+    };
 
     if (group.telemanagement == false) {
         $("[value='telemanagement'][name='check-sensor-group']").prop("disabled", true);
-    }
+    };
 
     if (group.telemetry == false) {
         $("[value='telemetry'][name='check-sensor-group']").prop("disabled", true);
-    }
+    };
+  
+    if (document.getElementById("dcca-parameterization-default").checked) {
+        document.getElementById("dcca-parameterization-value").value = 2;
+        document.getElementById("dcca-parameterization-value").disabled = true;
+    } else {
+        document.getElementById("dcca-parameterization-value").disabled = false;
+    }; 
 
     $('#form-visualization-settings input[type=checkbox]').prop("disabled", false);
     $('#vis-sensor-type').prop("disabled", false);
@@ -1430,5 +1437,4 @@ function activate_form() {
 
     $(':button[btn-type=collapse]').prop("disabled", false);
     $(':button[btn-type=redo]').prop("disabled", false);
-
 };

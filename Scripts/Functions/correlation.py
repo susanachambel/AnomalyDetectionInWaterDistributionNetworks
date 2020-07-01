@@ -14,6 +14,8 @@ from numpy.matlib import repmat
 from configuration import *
 from data_selection import *
 import matplotlib.pyplot as plt
+import statistics
+import time
 
 
 ## Aux Functions ##
@@ -126,30 +128,7 @@ def calculate_correlations(df1, df2, corr_array, k):
             result["kullback-leibler"] = round(calculate_kl_divergence(x1, x2),3) 
         elif (corr == "dcca"):
             result["dcca"] = round(calculate_dcca(x1, x2, k),3)            
-    return result
-
-
-def test_correlation():
-    
-    config = Configuration() 
-    path_init = config.path
-     
-    df1 = select_data(path_init, "infraquinta", "interpolated", 1, '2017-01-01 00:00:00', '2017-12-30 23:59:59')
-    df2 = select_data(path_init, "infraquinta", "interpolated", 3, '2017-01-01 00:00:00', '2017-12-30 23:59:59')
-    
-    result = calculate_correlations(df1, df2, ["pearson","kullback-leibler", "dcca"], 2)
-    
-    print(result)
-    
-    kl_pq = result["kullback-leibler"]
-    print('KL(P || Q): %.4f bits' % kl_pq)
-    
-    pearson = result["pearson"]
-    print('Pearson: %.4f' % pearson)
-    
-    dcca = result["dcca"]
-    print('DCCA: %.4f'% dcca)
-    
+    return result    
     
 
 def get_granularity(unit, frequence):
@@ -173,7 +152,6 @@ def get_dates_chunk_limits(date_min, date_max, granularity, chunk_granularity):
         chunk_limits.append(str(chunk_limit))
     return dates, chunk_limits
    
-
 def calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k):
            
     result = {}
@@ -182,15 +160,13 @@ def calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k
                 result["pearson"] = []
             elif (corr == "kullback-leibler"):
                 result["kullback-leibler"] = []
-                result["kullback-leibler-reverse"] = []
+                #result["kullback-leibler-reverse"] = []
             elif (corr == "dcca"):
                 result["dcca"] = []
                 
     df_aux = pd.DataFrame(index=dates, columns=[])
     df_concat = pd.concat([df_aux, df1, df2], axis=1, sort=False)
-        
-    #print(df_concat)
-    
+     
     for chunk_limit,chunk in df_concat.resample(get_granularity(chunk_granularity[0], chunk_granularity[1])):
         chunk = chunk.dropna()  
         x1 = chunk.iloc[:,0].to_numpy()
@@ -200,26 +176,48 @@ def calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k
         
         if(chunk.empty):
             is_empty = True
-             
+        
         for corr in corr_array:
             if (corr == "pearson"):           
                 if (is_empty):
-                     result["pearson"].append(999999999)
+                    result["pearson"].append(999999999)
                 else:
                     result["pearson"].append(round(calculate_pearson_v2(x1, x2),3))         
             elif (corr == "kullback-leibler"):
                 if (is_empty):
-                     result["pearson"].append(999999999)
+                     result["kullback-leibler"].append(999999999)
+                     #result["kullback-leibler-reverse"].append(999999999)
                 else:
                     result["kullback-leibler"].append(round(calculate_kl_divergence(x1, x2),3))
-                    result["kullback-leibler-reverse"].append(round(calculate_kl_divergence(x2, x1),3))
+                    #result["kullback-leibler-reverse"].append(round(calculate_kl_divergence(x2, x1),3))
             elif (corr == "dcca"):
                 if (is_empty):
-                     result["pearson"].append(999999999)
+                     result["dcca"].append(999999999)
                 else:
-                    result["dcca"].append(round(calculate_dcca(x1, x2, k),3))   
+                    result["dcca"].append(round(calculate_dcca(x1, x2, k),3))
+                    
     return result
+
+
+def test_correlation():
     
+    config = Configuration() 
+    path_init = config.path
+     
+    df1 = select_data(path_init, "infraquinta", "interpolated", 1, '2017-01-01 00:00:00', '2017-12-30 23:59:59')
+    df2 = select_data(path_init, "infraquinta", "interpolated", 3, '2017-01-01 00:00:00', '2017-12-30 23:59:59')
+    
+    result = calculate_correlations(df1, df2, ["pearson","kullback-leibler", "dcca"], 2)
+    
+    print(result)
+ 
+    kl_pq = result["kullback-leibler"]
+    print('KL(P || Q): %.4f bits' % kl_pq)
+    pearson = result["pearson"]
+    print('Pearson: %.4f' % pearson)
+    dcca = result["dcca"]
+    print('DCCA: %.4f'% dcca)
+
 
 def test_correlation_line():
     config = Configuration() 
@@ -229,29 +227,22 @@ def test_correlation_line():
     df2 = select_data(path_init, "infraquinta", "interpolated", 3, '2017-01-01 00:00:00', '2017-12-30 23:59:59')
     
     date_min = '2017-01-01 00:00:00'
-    date_max = '2017-12-31 23:59:59'
-    
+    date_max = '2017-12-31 23:59:59'  
     corr_array = ["pearson","kullback-leibler", "dcca"]
-
     granularity = ['0',1]
-    chunk_granularity = ['3',1]
-
+    chunk_granularity = ['1',2]
     k = 2
      
-    dates, chunk_limits = get_dates_chunk_limits(date_min, date_max, granularity, chunk_granularity)
+    dates, chunk_limits = get_dates_chunk_limits(date_min, date_max, granularity, chunk_granularity)   
+    results = calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k)
     
-    result = calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k)
-    
-    print(result)
-    
-    plt.plot(result["kullback-leibler"])
-    plt.plot(result["kullback-leibler-reverse"])
-    plt.plot(result["pearson"])
-    plt.plot(result["dcca"])
+    plt.plot(results["kullback-leibler"])
+    plt.plot(results["pearson"])
+    plt.plot(results["dcca"])
     plt.ylabel('some numbers')
     plt.show()
-      
     
-#test_correlation_line()
-         
+
+       
 #test_correlation()
+#test_correlation_line()
