@@ -3,6 +3,7 @@
 Created on Sun Apr 12 18:56:59 2020
 
 @author: susan
+
 """
 
 import pandas as pd
@@ -25,14 +26,10 @@ def replace_with_nan_none(results, action):
             results[key] = result      
     return results
 
-def difference_correlation(results):
-    
+def difference_correlation(results):    
     results = replace_with_nan_none(results, "none")
-    
-    results_diff = {}
-    
-    for key in results:
-        
+    results_diff = {}  
+    for key in results:   
         results_diff[key] = {}
         data = [round(abs(t - s),4) for s, t in zip(results[key], results[key][1:])]        
         results_diff[key]['data'] = data
@@ -111,7 +108,7 @@ def test_correlation_line_diff_2():
     config = Configuration() 
     path_init = config.path
     
-    sensors = [1,2,6,9,10,12,14]
+    sensors = [12,2,6]
     date_min = '2017-02-07 00:00:00'
     date_max = '2017-02-07 23:59:59'
     corr_array = ["pearson","kullback-leibler", "dcca"]
@@ -178,4 +175,4 @@ def test_correlation_line_diff():
 
     
 #test_correlation_line_diff()
-test_correlation_line_diff_2()
+#test_correlation_line_diff_2()

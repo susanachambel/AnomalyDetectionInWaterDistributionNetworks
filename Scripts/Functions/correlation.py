@@ -49,15 +49,15 @@ def sliding_window(xx,k):
     
     Note: When this value is passed to the website, it will be interpreted as NULL
 """
-def calculate_pearson(df1, df2):
-    x1, x2 = get_common_datapoints(df1, df2)   
+def calculate_pearson(df1, df2):  
+    x1, x2 = get_common_datapoints(df1, df2) 
     value = stats.pearsonr(x1, x2)    
     if np.isnan(value[0]):
         return 999999999
     else:
         return value[0]
     
-def calculate_pearson_v2(x1, x2):
+def calculate_pearson_v2(x1, x2):   
     value = stats.pearsonr(x1, x2)    
     if np.isnan(value[0]):
         return 999999999
@@ -116,7 +116,7 @@ def calculate_dcca(x1, x2, k):
     Pearson correlation -> pearson
     Kullback-Leibler divergence -> kl 
 """
-def calculate_correlations(df1, df2, corr_array, k):    
+def calculate_correlations(df1, df2, corr_array, k):      
     x1, x2 = get_common_datapoints(df1, df2)        
     # TODO Não esquecer que tratar o caso em que não existem pontos em comum        
     result = {}
@@ -153,7 +153,7 @@ def get_dates_chunk_limits(date_min, date_max, granularity, chunk_granularity):
     return dates, chunk_limits
    
 def calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k):
-           
+    
     result = {}
     for corr in corr_array:
             if (corr == "pearson"):      
@@ -174,7 +174,7 @@ def calculate_correlation_line(df1, df2, corr_array, dates, chunk_granularity, k
         
         is_empty = False
         
-        if(chunk.empty):
+        if(chunk.empty or (len(chunk) < 2)):
             is_empty = True
         
         for corr in corr_array:

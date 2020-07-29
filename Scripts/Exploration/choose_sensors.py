@@ -3,6 +3,11 @@
 Created on Fri Mar  6 20:54:48 2020
 
 @author: susan
+
+@about: For each event, we save an image with the plots of each sensor from 2 
+days prior to the event until the water is opened. It also shows when the event 
+was detected and when the water was closed (if applied).
+    
 """
 
 import pandas as pd
@@ -19,62 +24,77 @@ import numpy as np
 config = Configuration()
 path_init = config.path
 
-date_min = '2017-01-06 08:30:00'
-date_max = '2017-01-08 14:00:00'
-date_rupture_detection = '2017-01-08 08:30:00'
-date_water_closure = '2017-01-08 09:00:00'
-date_possible_rupture = '2017-01-07 18:00:00'
 
-df1 = select_data(path_init, "infraquinta", "interpolated", 1, date_min, date_max)
-df9 = select_data(path_init, "infraquinta", "interpolated", 9, date_min, date_max)
-df10 = select_data(path_init, "infraquinta", "interpolated", 10, date_min, date_max)
-df12 = select_data(path_init, "infraquinta", "interpolated", 12, date_min, date_max)
-df14 = select_data(path_init, "infraquinta", "interpolated", 14, date_min, date_max)
-df2 = select_data(path_init, "infraquinta", "interpolated", 2, date_min, date_max)
-df6 = select_data(path_init, "infraquinta", "interpolated", 6, date_min, date_max)
+df_events = pd.read_csv(path_init + "\\Data\\events_ruturas_infraquinta_2017.csv", sep=';')
+df_events['date_executed'] = pd.to_datetime(df_events['date_executed'], format='%Y/%m/%d %H:%M:%S')
+df_events['date_detected'] = pd.to_datetime(df_events['date_detected'], format='%Y/%m/%d %H:%M:%S')
+df_events['date_water_closed'] = pd.to_datetime(df_events['date_water_closed'], format='%Y/%m/%d %H:%M:%S')
+df_events['date_water_opened'] = pd.to_datetime(df_events['date_water_opened'], format='%Y/%m/%d %H:%M:%S')
+df_events['date_possible'] = pd.to_datetime(df_events['date_possible'], format='%Y/%m/%d %H:%M:%S')
+df_events = df_events[df_events['read'] == 'y']
 
+df_sensors = pd.read_csv(path_init + "\\Data\\events_ruturas_infraquinta_2017_sensors.csv", sep=';')
+df_sensors = df_sensors[df_sensors['read'] == 'y']
 
-dfs = [df1, df9, df10, df12, df14, df2, df6]
-dfs_names = ['[1] APA Caudal Actual','[9] QV Caudal','[10] HC Caudal', 
-             '[12] RPR Caudal Pre', '[14] RPR Caudal Grv', '[2] PB2 caudal caixa 1', '[6] RSV R5 Caudal Caixa']
-
-
-m = len(dfs)
+m = len(df_sensors)
 n = 1
 
-fig, axs = plt.subplots(m, n, figsize=(8*n,4*m), constrained_layout=True)
-ylabel = "Water flow [m3/h]"
-color = 'steelblue'
 
-
-locator = mdates.HourLocator(interval=2)
-formatter = mdates.ConciseDateFormatter(locator)
-locator_min = mdates.HourLocator(interval=1)
-rupture_detection = datetime.strptime(date_rupture_detection, '%Y-%m-%d %H:%M:%S')
-water_closure = datetime.strptime(date_water_closure, '%Y-%m-%d %H:%M:%S')
-possible_rupture = datetime.strptime(date_possible_rupture, '%Y-%m-%d %H:%M:%S')
-
-i = 0
-for df in dfs:
+j = 0
+for index_event, event in df_events.iterrows():
     
-    title = dfs_names[i]
+    fig, axs = plt.subplots(m, n, figsize=(8*n,4*m), constrained_layout=True)
     
-    df = df.resample('30min').mean()
-    axs[i].plot(df.index,df['value'], color=color)
-    axs[i].set(xlabel='', ylabel=ylabel, title=title)
+    dfs = []
     
-    axs[i].xaxis.set_major_locator(locator)
-    axs[i].xaxis.set_major_formatter(formatter)
+    for index_sensor, sensor in df_sensors.iterrows():
+        dfs.append(select_data(path_init, "infraquinta", "interpolated", sensor['id'], event['date_start'], event['date_end']))        
     
-    axs[i].xaxis.set_minor_locator(locator_min)
-    axs[i].axvline(x=rupture_detection, color='red', linestyle='--')
-    axs[i].axvline(x=water_closure, color='orange', linestyle='--')
-    axs[i].axvline(x=possible_rupture, color='purple', linestyle='--')
+    ylabel = "Water flow [m3/h]"
+    color = 'steelblue'
     
-    plt.setp(axs[i].get_xticklabels(), rotation=30, ha='right')
+    locator = mdates.HourLocator(interval=2)
+    formatter = mdates.ConciseDateFormatter(locator)
+    locator_min = mdates.HourLocator(interval=1)
+    
+    date_detected = event['date_detected']
+    date_water_closed = event['date_water_closed'] 
+    date_possible = event['date_possible']  
+          
+    i = 0
+    for df in dfs:
         
-    i += 1
+        title_aux = df_sensors.iloc[i,:]
+        title = "[" + str(title_aux[0]) + "] " + title_aux[1] 
+        
+        df = df.resample('30min').mean()
+        axs[i].plot(df.index,df['value'], color=color)
+        axs[i].set(xlabel='', ylabel=ylabel, title=title)
+        
+        axs[i].xaxis.set_major_locator(locator)
+        axs[i].xaxis.set_major_formatter(formatter)
+        
+        axs[i].xaxis.set_minor_locator(locator_min)
+        
+        
+        if not pd.isnull(date_detected):
+            axs[i].axvline(x=date_detected, color='red', linestyle='--')
+        
+        
+        if not pd.isnull(date_water_closed):
+            axs[i].axvline(x=date_water_closed, color='darkturquoise', linestyle='--')
+        
+        if not pd.isnull(date_possible):
+            axs[i].axvline(x=date_possible, color='purple', linestyle='--')
+        
+        
+        plt.setp(axs[i].get_xticklabels(), rotation=30, ha='right')
+        
+        i += 1
+         
+    
+    #plt.savefig(path_init + "\\Reports\\Events\\" + str(j) + "_" + event['date_end'].split(" ")[0] + '_event_flow.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
 
-
-plt.savefig('destination_path.png', format='png', dpi=1200, bbox_inches='tight')
-plt.show()
+    j += 1
+                        
