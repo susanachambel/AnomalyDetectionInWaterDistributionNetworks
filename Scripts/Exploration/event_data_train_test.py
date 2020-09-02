@@ -13,7 +13,9 @@ from correlation import *
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import confusion_matrix
 from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import LinearSVC, NuSVC
 from itertools import combinations, product
+from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 from scipy import stats
 import pandas as pd
@@ -207,9 +209,34 @@ def plot_sensors(X_test, y_test, y_pred):
         #plt.savefig(path_init + "\\Reports\\Results Simulated\\" + str(event_id) + '_event_flow.png', format='png', dpi=300, bbox_inches='tight')
         #plt.close(fig)
         plt.show()
-        
+
+def plot_roc_curve(fpr, tpr, points):
+    roc_auc = auc(fpr, tpr)
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange', 
+             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    
+    for point in points:
+        plt.plot(point['fpr'],point['tpr'],'ro',label=point['label'], color=point['color'])
+    
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve')
+    plt.legend(loc="lower right")
+    plt.show()
+      
 def get_combo_name(combo):
     return str(combo[0]) + "-" + str(combo[1])
+
+def get_instances_confusion_matrix(cnf_matrix):
+    TN = cnf_matrix[0][0]
+    FP = cnf_matrix[0][1]
+    FN = cnf_matrix[1][0]
+    TP = cnf_matrix[1][1]
+    return TN, FP, FN, TP
       
 def process_set_data(df, combos, ea1, ea2, correlation_type):
     
@@ -280,7 +307,7 @@ def execute_create_dataset(path_init, correlation_type):
     df = process_set_data(df_archive, combos, ea1, ea2, correlation_type)
     save_set_data(path_init, df, correlation_type)
     
-def execute_train_test(path_init, sensors, correlation_type):
+def execute_train_test(path_init, sensors, correlation_type, classifier_type):
 
     df = get_set_data(path_init, sensors, correlation_type)
     
@@ -291,19 +318,13 @@ def execute_train_test(path_init, sensors, correlation_type):
     plot_histogram_df(df_neg.iloc[:,:-1])
     """
     
-    df = df[(df.y == 0) | (df.y >= 3)]
-    
     n_splits = 5
     skf = StratifiedKFold(n_splits=n_splits, random_state=1, shuffle=True)
     
     X = df.iloc[:,:-1]
     y = df.loc[:,'y']
     
-    TPR = []
-    TNR = []
-    PPV = []
-    NPV = []
-    ACC = []
+    df_results = pd.DataFrame()
     
     n_fold = 1
     for train_index, test_index in skf.split(X, y):
@@ -313,49 +334,76 @@ def execute_train_test(path_init, sensors, correlation_type):
                 
         y_train = y_train.replace([2, 3, 4, 5, 6], 1)
         y_test = y_test.replace([2, 3, 4, 5, 6], 1)
-    
-        gnb = GaussianNB()
-        y_pred = gnb.fit(X_train, y_train).predict(X_test)
         
+        y_pred = []
+        y_scores = []
+        
+        if classifier_type == "GaussianNB":
+            gnb = GaussianNB()
+            gnb_fit = gnb.fit(X_train, y_train)
+            y_pred = gnb_fit.predict(X_test)
+            y_scores = gnb_fit.predict_proba(X_test)[:,1]
+        elif classifier_type == "LinearSVC":
+            li_svc = LinearSVC(random_state=0)
+            li_svc_fit = li_svc.fit(X_train, y_train)
+            y_pred = li_svc_fit.predict(X_test)
+            y_scores = li_svc_fit.decision_function(X_test)
+        elif classifier_type == "NuSVC":
+            nu_svc = NuSVC()
+            nu_svc_fit = nu_svc.fit(X_train, y_train)
+            y_pred = nu_svc_fit.predict(X_test)
+            y_scores = nu_svc_fit.decision_function(X_test)
+        
+        
+        # Before Optimal Threshold
+        cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
+        TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
+        point1 = {}
+        point1['fpr'] = 1-(TN/(TN+FP))
+        point1['tpr'] = TP/(TP+FN)
+        point1['label'] = "Non Optimal"
+        point1['color'] = "blue"
+               
+        fpr, tpr, thresholds = roc_curve(y_test, y_scores, pos_label=1)
+        optimal_idx = np.argmax(tpr - fpr)
+        optimal_threshold = thresholds[optimal_idx]
+        y_pred = (y_scores >= optimal_threshold).astype(bool)    
+        
+        # After Optimal Threshold
         cnf_matrix = confusion_matrix(y_test, y_pred, [0,1]) # conjunto de testes, as previsões e as labels
+        TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
+        point2 = {}
+        point2['fpr'] = 1-(TN/(TN+FP))
+        point2['tpr'] = TP/(TP+FN)
+        point2['label'] = "Optimal"
+        point2['color'] = "red"
         
-        TN = cnf_matrix[0][0]
-        FP = cnf_matrix[0][1]
-        FN = cnf_matrix[1][0]
-        TP = cnf_matrix[1][1]
+        #plot_roc_curve(fpr, tpr, [point1, point2])
         
-        TPR.append(TP/(TP+FN))
-        TNR.append(TN/(TN+FP))
-        PPV.append(TP/(TP+FP))
-        NPV.append(TN/(TN+FN))
-        ACC.append((TP+TN)/(TP+FN+TN+FP))
+        results = {}
+        
+        results['TPR'] = TP/(TP+FN)
+        results['TNR'] = TN/(TN+FP)
+        results['PPV'] = TP/(TP+FP)
+        results['NPV'] = TN/(TN+FN)
+        results['ACC'] = (TP+TN)/(TP+FN+TN+FP)
+        
+        df_results = df_results.append(results, ignore_index=True)
         
         #plot_confusion_matrix(cnf_matrix, [0,1])
         #plot_sensors(X_test, y_test, y_pred)
         
-        """
-        df_tn, df_fp, df_tp, df_fn = get_tn_fp_tp_fn(X_test, y_test, y_pred)
-        plot_histogram_df(df_tn)
-        plot_histogram_df(df_fp)
-        plot_histogram_df(df_tp)
-        plot_histogram_df(df_fn)     
-        """
-        
-        
+        #df_tn, df_fp, df_tp, df_fn = get_tn_fp_tp_fn(X_test, y_test, y_pred)
+        #plot_histogram_df(df_tn)
+        #plot_histogram_df(df_fp)
+        #plot_histogram_df(df_tp)
+        #plot_histogram_df(df_fn)
+      
         n_fold += 1
-    
-    results = {}
-    results['TPR'] = round(np.mean(TPR), 2)
-    results['TNR'] = round(np.mean(TNR), 2)
-    results['PPV'] = round(np.mean(PPV), 2)
-    results['NPV'] = round(np.mean(NPV), 2)
-    results['ACC'] = round(np.mean(ACC), 2)
         
-    print("%d Folds" % n_splits)
+    print(round(df_results,2))  
+    results = round(df_results.describe().loc['mean',:],2).to_dict()
     print(results)
-    
-    
-
     return results
 
 
@@ -363,11 +411,11 @@ def execute_train_test(path_init, sensors, correlation_type):
 config = Configuration()
 path_init = config.path
 
-
 #execute_create_dataset(path_init, "dcca")
 
 sensors_init = ['1', '2', '6', '9', '10']
 correlation_type = "dcca"
+classifier_type = "NuSVC" #"GaussianNB" "NuSVC" "LinearSVC"
 combos = []
 sensors = []
 
@@ -379,7 +427,7 @@ elif correlation_type == "dcca":
     sensors = ['1', '2', '6', '9', '10'] 
 
 
-results = execute_train_test(path_init, sensors, correlation_type)
+results = execute_train_test(path_init, sensors, correlation_type, classifier_type)
 
 """
 df = pd.DataFrame()
@@ -389,7 +437,7 @@ for i in range(3, 6):
 
 for combo in combos:
     for sensor_list in combo:
-        results = execute_train_test(path_init, list(sensor_list), correlation_type)
+        results = execute_train_test(path_init, list(sensor_list), correlation_type, classifier_type)
         results['combo'] = str(list(sensor_list))
         df = df.append(results, ignore_index=True)
         
