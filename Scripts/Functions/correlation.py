@@ -83,6 +83,30 @@ def calculate_kl_divergence(x1, x2):
     return sum(distprob1[i] * log2(distprob1[i]/distprob2[i]) for i in range(len(distprob1)))
 
 
+def calculate_dcca_2(x1, x2, k):
+    cdata = np.array([x1,x2]).T
+    nsamples,nvars = cdata.shape
+    #cdata = signal.detrend(cdata,axis=0)
+    cdata = cdata-cdata.mean(axis=0)
+    xx = np.cumsum(cdata,axis=0)  
+    F2_dfa_x = np.zeros(nvars)
+    allxdif = []
+    for ivar in range(nvars):
+        xx_swin , idx = sliding_window(xx[:,ivar],k)
+        nwin = xx_swin.shape[0]
+        b1, b0 = np.polyfit(np.arange(k),xx_swin.T,deg=1)
+        x_hatx = repmat(b1,k,1).T*repmat(range(k),nwin,1) + repmat(b0,k,1).T
+        xdif = xx_swin-x_hatx
+        allxdif.append(xdif)
+        F2_dfa_x[ivar] = (xdif**2).mean()
+    dcca = np.zeros([nvars,nvars])
+    for i in range(nvars):
+        for j in range(nvars):
+            F2_dcca = (allxdif[i]*allxdif[j]).mean()
+            dcca[i,j] = F2_dcca / np.sqrt(F2_dfa_x[i] * F2_dfa_x[j]) 
+       
+    return dcca[0][1]
+
 def calculate_dcca(x1, x2, k):
     cdata = np.array([x1,x2]).T
     nsamples,nvars = cdata.shape

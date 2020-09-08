@@ -157,7 +157,7 @@ def plot_confusion_matrix(cnf_matrix, classesNames, normalize=False,
         title = "Normalized confusion matrix"
     else:
         cm = cnf_matrix
-        title = 'Confusion matrix, without normalization'
+        title = 'Confusion Matrix'
 
     plt.figure()
 
@@ -367,7 +367,7 @@ def execute_train_test(path_init, sensors, correlation_type, classifier_type):
         fpr, tpr, thresholds = roc_curve(y_test, y_scores, pos_label=1)
         optimal_idx = np.argmax(tpr - fpr)
         optimal_threshold = thresholds[optimal_idx]
-        y_pred = (y_scores >= optimal_threshold).astype(bool)    
+        y_pred = (y_scores >= optimal_threshold).astype(bool)
         
         # After Optimal Threshold
         cnf_matrix = confusion_matrix(y_test, y_pred, [0,1]) # conjunto de testes, as previsões e as labels
