@@ -114,37 +114,48 @@ def transform_y(c):
         
 config = Configuration()
 path_init = config.path
-data_type = "q"
+data_type = "p"
 ea = EventArchive(path_init, data_type)
 sensors = ['1', '2', '6', '9', '10']
 combos = list(combinations(sensors, 2))
-correlation_type = "pearson"
+correlation_types = ["dcca","pearson"]
 
 event_range_min = 1
 event_range_max = 18696
 
-for width in range(15, 41, 5):
-    
-    df_diff = {}
-    for combo in combos:
-        df_diff[get_combo_name(combo)] = []
-    df_diff['y'] = []
-    
-    for event_id in range(event_range_min, event_range_max+1):
-    
-        df11, df12 = get_data_with_event(ea.get_event(event_id), ea.get_event_info(event_id), width)
-        if(df11 is not None):
-            df_diff = update_df_diff(ea, df11, df12, df_diff, combos, correlation_type, "with")
-        
-        df21, df22 = get_data_without_event(ea.get_event(event_id), ea.get_event_info(event_id), width)
-        if(df21 is not None):
-            df_diff = update_df_diff(ea, df21, df22, df_diff, combos, correlation_type, "without")
-        
-        print(2*'\x1b[2K\r' + "Progress " + str(event_id) + "/" + str(event_range_max), flush=True, end="\r")
-        
-    df_diff = pd.DataFrame(df_diff)
-    print(df_diff)
-    path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data\\dataset_' + data_type + '_' + correlation_type + '_' + str(width) + '.csv'
-    df_diff.to_csv(index=True, path_or_buf=path_export)
 
+sensors_aux = list(range(1,21, 1 ))
+sensors = []
+
+for sensor in sensors_aux:
+    sensors.append(str(sensor))
+
+combos = list(combinations(sensors, 2))
+
+
+for correlation_type in correlation_types:
+
+    for width in range(40, 41, 1):
+        
+        df_diff = {}
+        for combo in combos:
+            df_diff[get_combo_name(combo)] = []
+        df_diff['y'] = []
+        
+        for event_id in range(event_range_min, event_range_max+1):
+        
+            df11, df12 = get_data_with_event(ea.get_event(event_id), ea.get_event_info(event_id), width)
+            if(df11 is not None):
+                df_diff = update_df_diff(ea, df11, df12, df_diff, combos, correlation_type, "with")
+            
+            df21, df22 = get_data_without_event(ea.get_event(event_id), ea.get_event_info(event_id), width)
+            if(df21 is not None):
+                df_diff = update_df_diff(ea, df21, df22, df_diff, combos, correlation_type, "without")
+            
+            print(2*'\x1b[2K\r' + "Progress " + str(event_id) + "/" + str(event_range_max), flush=True, end="\r")
+            
+        df_diff = pd.DataFrame(df_diff)
+        print(df_diff)
+        path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data\\dataset_' + data_type + '_' + correlation_type + '_' + str(width) + '.csv'
+        df_diff.to_csv(index=True, path_or_buf=path_export)
 
