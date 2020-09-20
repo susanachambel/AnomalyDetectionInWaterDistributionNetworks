@@ -46,7 +46,6 @@ df_events['date_detected'] = pd.to_datetime(df_events['date_detected'], format='
 df_events['date_water_closed'] = pd.to_datetime(df_events['date_water_closed'], format='%Y/%m/%d %H:%M:%S')
 df_events['date_possible'] = pd.to_datetime(df_events['date_possible'], format='%Y/%m/%d %H:%M:%S')
 
-
 corr_array = ["pearson","kullback-leibler", "dcca"]
 corr_array = ["pearson"]
 granularity = ['0',1]
@@ -232,7 +231,7 @@ for index_event, event in df_events.iterrows():
         
         i += 1
     
-    plt.savefig(path_init + "\\Reports\\Events Correlation Map\\" + str(event['id']) + "_" + event['date_end'].split(" ")[0] + '_event_flow.png', format='png', dpi=300, bbox_inches='tight')    
+    #plt.savefig(path_init + "\\Reports\\Events Correlation Map\\" + str(event['id']) + "_" + event['date_end'].split(" ")[0] + '_event_flow.png', format='png', dpi=300, bbox_inches='tight')    
     plt.show()    
         
         

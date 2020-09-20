@@ -8,143 +8,87 @@ Created on Fri Aug 5 20:54:48 2020
 import sys
 sys.path.append('../Functions')
 from configuration import *
-from event_archive import *
+from event_archive_2 import *
 from correlation import *
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_curve, auc
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import LinearSVC, NuSVC
-from itertools import combinations, product
-from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
-from scipy import stats
+import matplotlib.ticker as ticker
+from itertools import combinations, product
 import pandas as pd
 import numpy as np
 
-
-def get_complete_archive(ea1, ea2):
-
-    df_archive1 = ea1.df_archive.loc[:,['time_middle', 'c']]
-    df_archive2 = ea2.df_archive
+def get_dataset(path_init, sensors, correlation_type, data_type, width):
+    sensors_init = []
+    combos_str = []
+    path = ''
     
-    df_archive2['y'] = 0
-    
-    conditions = [
-        (df_archive1['c'] == 0.05),
-        (df_archive1['c'] == 0.1),
-        (df_archive1['c'] == 0.5),
-        (df_archive1['c'] == 1.0),
-        (df_archive1['c'] == 1.5),
-        (df_archive1['c'] == 2.0)]
-    
-    choices = [1, 2, 3, 4, 5, 6]
-    
-    df_archive1['y'] = np.select(conditions, choices, default=0)
-    
-    df_archive1 = df_archive1.loc[:,['time_middle', 'y']]
+    if(data_type == 'r'):
+        sensors_init_f = ['1', '9', '10', '12', '14', '2', '6']
+        sensors_init_p = ['3', '7', '8', '11', '15']
+        combos_f = list(combinations(sensors_init_f, 2))
+        combos_p = list(combinations(sensors_init_p, 2))
+        for combos in [combos_f, combos_p]:
+            for combo in combos:
+                if ((combo[0] in sensors) and (combo[1] in sensors)):
+                    combos_str.append(get_combo_name(combo))
+        path = path_init + '\\Data\\infraquinta\\events\\Organized_Data\\dataset_'+ data_type + '_' + correlation_type.lower() + '.csv'
+    else:
+        if(data_type == 'q'):
+            sensors_init = ['1', '2', '6', '9', '10']
+        elif(data_type == 'p'):
+            sensors_init_aux = list(range(1, 21, 2))
+            for sensor in sensors_init_aux:
+                sensors_init.append(str(sensor))
         
-    df_archive1['event_id'] = df_archive1.index
-    df_archive2['event_id'] = df_archive2.index
-    
-    df_archive = df_archive1.append(df_archive2, ignore_index=True)
-
-    return df_archive
-
-def split_df(df): 
-    n = int(df.shape[0]/2)
-    df1 = df.iloc[:n,:]
-    df2 = df.iloc[n:,:]
-    return df1, df2
-
-def calculate_correlation_difference(df1, df2, sensors, correlation_type):   
-    x11 = df1.loc[:,sensors[0]].to_numpy()
-    x12 = df1.loc[:,sensors[1]].to_numpy()    
-    x21 = df2.loc[:,sensors[0]].to_numpy() 
-    x22 = df2.loc[:,sensors[1]].to_numpy()
-    
-    corr1 = 0
-    corr2 = 0
-    
-    if correlation_type == "pearson":
-        corr1 = stats.pearsonr(x11, x12)[0]
-        corr2 = stats.pearsonr(x21, x22)[0]
-    elif correlation_type == "dcca":
-        corr1 = calculate_dcca(x11, x12, 2)
-        corr2 = calculate_dcca(x21, x22, 2)
-    
-    return abs(corr1-corr2)
-
-def update_df_diff(df1, df2, df_diff, combos, correlation_type):
-    for combo in combos:
-        sensor1 = combo[0]
-        sensor2 = combo[1]
-        diff = calculate_correlation_difference(df1, df2, [sensor1, sensor2], correlation_type)
-        df_diff[get_combo_name(combo)].append(diff)
-    return df_diff
-
-def plot_histogram(x, combo_name):
-    fig, ax = plt.subplots(1, 1, figsize=(8,4))
-    bin_edges = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9]
-    n, bins, patches = ax.hist(x, bins=bin_edges, color='darkturquoise', edgecolor='k')
-    
-    mean = np.mean(x)
+        combos = list(combinations(sensors_init, 2))
+        for combo in combos:
+            if ((combo[0] in sensors) and (combo[1] in sensors)):
+                combos_str.append(get_combo_name(combo))
         
-    ax.axvline(mean, color='k', linestyle='dashed', linewidth=1)
-    min_ylim, max_ylim = ax.get_ylim()
-    ax.text(mean+0.05, max_ylim*0.9, 'Mean: {:.3f}'.format(mean), bbox=dict(facecolor="w",alpha=0.5,boxstyle="round"))
-    ax.set(xticks=bin_edges)
-    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+        path = path_init + '\\Data\\infraquinta\\events\\Organized_Data\\dataset_'+ data_type + '_' + correlation_type.lower() +'_' + str(width) + '.csv'
     
-    title = "[ " + combo_name + " ] Correlation Difference Histogram"
-    ax.set(xlabel='Correlation difference [0-2]', ylabel='Number of observations', title=title)
+    combos_str.append('y')
     
-    plt.show()
+    df = pd.read_csv(path, index_col=0)
+    df = df.loc[:, combos_str]
+    
+    return df
 
-def plot_histogram_df(df):
-    df_len = len(list(df.columns))
-    fig = plt.figure(figsize=(10,6*df_len))
-    gs0 = fig.add_gridspec(ncols=1, nrows=df_len, hspace=.3)
-    i = 0
-    for column in df.columns:
-        x = df.loc[:, column].to_numpy()
-        ax = fig.add_subplot(gs0[i])
-        bin_edges = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9]
-        n, bins, patches = ax.hist(x, bins=bin_edges, color='darkturquoise', edgecolor='k')
-        mean = np.mean(x)
-        ax.axvline(mean, color='k', linestyle='dashed', linewidth=1)
-        min_ylim, max_ylim = ax.get_ylim()
-        ax.text(mean+0.05, max_ylim*0.9, 'Mean: {:.3f}'.format(mean), bbox=dict(facecolor="w",alpha=0.5,boxstyle="round"))
-        ax.set(xticks=bin_edges)
-        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
-        title = "[ " + column + " ] Correlation Difference Histogram"
-        ax.set(xlabel='Correlation difference [0-2]', ylabel='Number of observations', title=title)
-        i+=1
-    plt.show()
+def get_combo_name(combo):
+    return str(combo[0]) + "-" + str(combo[1])
 
-def get_tn_fp_tp_fn(X_test, y_test, y_pred):
-        
-    df_aux = X_test.copy()
-    df_aux['y'] = y_test
-    df_aux['y_pred'] = y_pred
-    
-    df_tn = df_aux[(df_aux.y == 0) & (df_aux.y_pred == 0)]
-    df_fp = df_aux[(df_aux.y == 0) & (df_aux.y_pred == 1)]
-    df_tp = df_aux[(df_aux.y == 1) & (df_aux.y_pred == 1)]
-    df_fn = df_aux[(df_aux.y == 1) & (df_aux.y_pred == 0)]
-    
-    del df_tn['y']
-    del df_tn['y_pred']
-    del df_fp['y']
-    del df_fp['y_pred']
-    del df_tp['y']
-    del df_tp['y_pred']
-    del df_fn['y']
-    del df_fn['y_pred']
-   
-    return df_tn, df_fp, df_tp, df_fn 
+def get_instances_confusion_matrix(cnf_matrix):
+    TN = cnf_matrix[0][0]
+    FP = cnf_matrix[0][1]
+    FN = cnf_matrix[1][0]
+    TP = cnf_matrix[1][1]
+    return TN, FP, FN, TP
 
-def plot_confusion_matrix(cnf_matrix, classesNames, normalize=False,
-                          cmap=plt.cm.Blues):
+def update_results(df_results, TN, FP, FN, TP):
+    results = get_results(TN, FP, FN, TP)
+    df_results = df_results.append(results, ignore_index=True)
+    return df_results
+
+def get_results(TN, FP, FN, TP):
+    results = {}
+    results['TPR'] = TP/(TP+FN)
+    results['TNR'] = TN/(TN+FP)
+    results['PPV'] = TP/(TP+FP)
+    results['NPV'] = TN/(TN+FN)
+    results['ACC'] = (TP+TN)/(TP+FN+TN+FP)
+    return results
+
+def optimize_y_pred(y_scores, x_curve, y_curve, thresholds):  
+    optimal_idx = np.argmax(y_curve - x_curve)
+    optimal_threshold = thresholds[optimal_idx]
+    y_pred = (y_scores >= optimal_threshold).astype(bool)
+    return y_pred
+
+def plot_confusion_matrix(cnf_matrix, classesNames, normalize=False, cmap=plt.cm.Blues):
     """
         This function prints and plots the confusion matrix.
         Normalization can be applied by setting `normalize=True`.
@@ -179,144 +123,169 @@ def plot_confusion_matrix(cnf_matrix, classesNames, normalize=False,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.show()
+    
+def plot_scatter_plot_results(df, label):
+    fig, ax = plt.subplots()
+    x = 1-df.loc[:,'TNR'].to_numpy()
+    y = df.loc[:,'TPR'].to_numpy()
+    z = df.loc[:,'PPV'].to_numpy()
+    c = df.loc[:,label.lower()].to_numpy()
+    index = df.index.to_numpy()
+    
+    i1 = np.argmax(y-x)
+    i2 = np.argmax(2*((y*z)/(y+z)))
+    
+    arrow_title = 'F1'
+    if(i1 != i2):
+        ax.annotate('TPR-FPR', xy=(x[i1], y[i1]),  xycoords='data',
+                    bbox=dict(boxstyle="round", fc="none", ec="gray"),
+                    xytext=(x[i1], y[i1]), textcoords='axes fraction',
+                    arrowprops=dict(arrowstyle='->', connectionstyle="arc3,rad=-0.2", shrinkB=5),
+                    horizontalalignment='right', verticalalignment='top')
+    else:    
+        arrow_title = 'F1|TPR-FPR'
+        ax.annotate(arrow_title, xy=(x[i2], y[i2]),  xycoords='data',
+                    bbox=dict(boxstyle="round", fc="none", ec="gray"),
+                    xytext=(x[i2], y[i2]), textcoords='axes fraction',
+                    arrowprops=dict(arrowstyle='->', connectionstyle="arc3,rad=-0.2", shrinkB=5),
+                    horizontalalignment='right', verticalalignment='top')
+    
+    if isinstance(c[0], str):
+        scatter = ax.scatter(x, y, edgecolors='black')
+    else:
+        cm = plt.cm.get_cmap('Blues')
+        scatter = ax.scatter(x, y, c=c, cmap=cm, edgecolors='black')
+        plt.colorbar(scatter, ticks=ticker.MaxNLocator(integer=True), label=label)
 
-def plot_sensors(X_test, y_test, y_pred):
-    df_aux = X_test.copy()
-    df_aux['y'] = y_test
-    df_aux['y_pred'] = y_pred
-    df_aux = df_aux[(df_aux.y == 1) & (df_aux.y_pred == 1)]
-    true_pos = df_aux.index.to_numpy()
-        
-    ea1 = EventArchive(path_init, 0)
-    for event_id in true_pos:    
-        event = ea1.get_event(event_id)
-        event_info = ea1.get_event_info(event_id)
-        
-        fig = plt.figure(figsize=(10,6*len(sensors)))
-        gs0 = fig.add_gridspec(ncols=1, nrows=len(sensors))
-        
-        i = 0
-        for sensor in sensors:
-                
-            ax = fig.add_subplot(gs0[i])
-            ax.plot(event.index,event.loc[:,sensor], label="smt")
-            title = "Event " + str(event_id) + " | Sensor " + sensor
-            ax.set(xlabel='', ylabel='Water Flow [m3/h]', title=title)
-            ax.axvline(x=event_info.time_init, color='red', linestyle='dashed', linewidth=1)
-            ax.axvline(x=event_info.time_final, color='red', linestyle='dashed', linewidth=1)
-            i += 1
-        
-        #plt.savefig(path_init + "\\Reports\\Results Simulated\\" + str(event_id) + '_event_flow.png', format='png', dpi=300, bbox_inches='tight')
-        #plt.close(fig)
-        plt.show()
+    for i in index:
+        c_aux = c[i]
+        if not isinstance(c_aux, str):
+            c_aux = int(c_aux)
+        ax.annotate(c_aux, (x[i], y[i]), textcoords="offset points", xytext=(5,0), ha='left')
+    
+    title = "TPR/FPR Variation\n[" + correlation_type + " w/ " + classifier_type + "]"
+    ax.set(xlabel='False Positive Rate [0-1]', ylabel='True Positive Rate [0-1]', title=title)
+    plt.show()
 
-def plot_roc_curve(fpr, tpr, points):
-    roc_auc = auc(fpr, tpr)
+def plot_roc_curve(fpr, tnr, points):
     lw = 2
-    plt.plot(fpr, tpr, color='darkorange', 
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    label = 'ROC curve (area = %0.2f)' % auc(fpr, tnr)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.plot(fpr, tnr, color='darkorange', lw=lw, label=label)
+    for point in points:
+        plt.plot(point['fpr'],point['tnr'],'ro',label=point['label'], color=point['color'])
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel("False Positive Rate [0-1]")
+    plt.ylabel("True Positive Rate [0-1]")
+    plt.title("ROC Curve")
+    plt.legend(loc="lower right")
+    plt.show()
+
+def plot_roc_curves(roc_curves, title, legend_title):   
+    lw = 2
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
+    plt.xlabel("False Positive Rate [0-1]")
+    plt.ylabel("True Positive Rate [0-1]")
+    plt.title("ROC Curve " + title)
     
-    for point in points:
-        plt.plot(point['fpr'],point['tpr'],'ro',label=point['label'], color=point['color'])
+    for index, curve in roc_curves.iterrows():
+        plt.plot(curve['fpr'], curve['tnr'], lw=lw, label=curve['label'])
     
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve')
-    plt.legend(loc="lower right")
+    #for curve in roc_curves:
+     #   plt.plot(curve['fpr'], curve['tnr'], lw=lw, label=curve['label'])
+    plt.legend(loc="lower right", title=legend_title)
     plt.show()
-      
-def get_combo_name(combo):
-    return str(combo[0]) + "-" + str(combo[1])
 
-def get_instances_confusion_matrix(cnf_matrix):
-    TN = cnf_matrix[0][0]
-    FP = cnf_matrix[0][1]
-    FN = cnf_matrix[1][0]
-    TP = cnf_matrix[1][1]
-    return TN, FP, FN, TP
-      
-def process_set_data(df, combos, ea1, ea2, correlation_type):
+def train_predict(classifier_type, X_train, y_train, X_test):
     
-    df_diff1 = {}
-    df_diff2 = {} 
-    for combo in combos:
-        df_diff1[get_combo_name(combo)] = []
-        df_diff2[get_combo_name(combo)] = []
+    clf = None
+    y_pred = None
+    y_scores = None
+    
+    if classifier_type == "GaussianNB":
+        clf = GaussianNB()
+    elif classifier_type == "LinearSVC":
+        clf = LinearSVC(random_state=1)
+    elif classifier_type == "NuSVC-rbf":
+        clf = NuSVC(random_state=1, kernel='rbf') # class_weight='balanced', nu=0.0000001, 
+    elif classifier_type == "NuSVC-poly":
+        clf = NuSVC(random_state=1, kernel='poly')
         
-    mask = df['y'] > 0
+    clf_fit = clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
     
-    df1 = df[mask]
-    X1 = df1.loc[:,'event_id'].to_numpy()
-    y1 = df1.loc[:,'y'].to_numpy()
+    if classifier_type == "GaussianNB":
+        y_scores = clf_fit.predict_proba(X_test)[:,1]
+    else:
+        y_scores = clf_fit.decision_function(X_test)
     
-    df2 = df[~mask]
-    X2 = df2.loc[:,'event_id'].to_numpy()
-    y2 = df2.loc[:,'y'].to_numpy()
-    
-    for event_id in X1:
-        df = ea1.get_event(event_id)                      
-        df1, df2 = split_df(df)
-        df_diff1 = update_df_diff(df1, df2, df_diff1, combos, correlation_type)
-        print(2*'\x1b[2K\r' + "Progress " + str(event_id), flush=True, end="\r")
-        
-    print("")
-    
-    for event_id in X2:
-        df = ea2.get_event(event_id)                      
-        df1, df2 = split_df(df)
-        df_diff2 = update_df_diff(df1, df2, df_diff2, combos, correlation_type)
-        print(2*'\x1b[2K\r' + "Progress " + str(event_id), flush=True, end="\r")
-    
+    return y_pred, y_scores
+
+def execute_train_test_real(path_init, correlation_type, classifier_type, data_type, width, optimize):
+
+    data_type = "r"
+    sensors = ['1', '9', '10', '12', '14', '2', '6', '3', '7', '8', '11', '15'] 
             
-    df_diff1 = pd.DataFrame(df_diff1)
-    df_diff1['y'] = y1
+    df = get_dataset(path_init, sensors, correlation_type, data_type, width)
     
-    df_diff2 = pd.DataFrame(df_diff2)
-    df_diff2['y'] = y2
+    n_loc = 7
+    if correlation_type == "Pearson":
+        n_loc = 9
     
-    df = df_diff1.append(df_diff2, ignore_index=True)
+    sensors_in = df.isnull().sum().sort_values(ascending = False).iloc[n_loc:].index.to_numpy()
     
-    return df
-
-def save_set_data(path_init, df, correlation_type):
-    path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data\\dataset_' + correlation_type + '.csv'
-    df.to_csv(index=True, path_or_buf=path_export)
-
-def get_set_data(path_init, sensors, correlation_type):
-    sensors_init = ['1', '2', '6', '9', '10']
-    combos = list(combinations(sensors_init, 2))
-    combos_str = []
-    for combo in combos:
-        if ((combo[0] in sensors) and (combo[1] in sensors)):
-            combos_str.append(get_combo_name(combo))
-    combos_str.append('y')
-    path = path_init + '\\Data\\infraquinta\\events\\Organized_Data\\dataset_' + correlation_type + '.csv'
-    df = pd.read_csv(path, index_col=0)
-    df = df.loc[:, combos_str]
-    return df
+    df = df.loc[:, sensors_in].dropna()
+    df = df.sample(frac = 1, random_state=1).reset_index(drop=True)
+     
+    n_splits = len(df[df['y']==1])
+    skf = StratifiedKFold(n_splits=n_splits, random_state=1, shuffle=True)
+        
+    X = df.iloc[:,:-1]
+    y = df.loc[:,'y']
+     
+    df_results = pd.DataFrame()
     
-def execute_create_dataset(path_init, correlation_type):
-    ea1 = EventArchive(path_init, 1)
-    ea2 = EventArchive(path_init, 2)
-    df_archive = get_complete_archive(ea1, ea2) 
-    sensors = ['1', '2', '6', '9', '10']
-    combos = list(combinations(sensors, 2))
-    df = process_set_data(df_archive, combos, ea1, ea2, correlation_type)
-    save_set_data(path_init, df, correlation_type)
+    n_fold = 1
+    for train_index, test_index in skf.split(X, y):
+        
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]     
+           
+        y_pred, y_scores = train_predict(classifier_type, X_train, y_train, X_test)
+            
+        cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
+        TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)      
+            
+        df_results = update_results(df_results, TN, FP, FN, TP)  
+        fpr, tnr, thresholds = roc_curve(y_test, y_scores, pos_label=1)
+        
+        roc_points = []
+        if optimize == 1:
+            y_pred = optimize_y_pred(y_scores, fpr, tnr, thresholds)
+            cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
+            TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
+            point2 = {}
+            point2['label'] = "Optimal"
+            point2['color'] = "red"
+            point2['fpr'] = 1-(TN/(TN+FP))
+            point2['tnr'] = TP/(TP+FN)
+            roc_points.append(point2)
+        
+        #plot_roc_curve(fpr, tnr, roc_points)
+        plot_confusion_matrix(cnf_matrix, [0,1])
+        n_fold += 1
+            
+    results = round(df_results.describe().loc['mean',:],2).to_dict()
+    print(round(df_results,2))  
+    print(results)
+       
+def execute_train_test(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize):
     
-def execute_train_test(path_init, sensors, correlation_type, classifier_type):
-
-    df = get_set_data(path_init, sensors, correlation_type)
-    
-    """
-    df_pos = df[(df.y >= 1)]
-    df_neg = df[(df.y == 0)]
-    plot_histogram_df(df_pos.iloc[:,:-1])
-    plot_histogram_df(df_neg.iloc[:,:-1])
-    """
+    df = get_dataset(path_init, sensors, correlation_type, data_type, width)
+    df = df.sample(frac = 1, random_state=1).reset_index(drop=True)
     
     n_splits = 5
     skf = StratifiedKFold(n_splits=n_splits, random_state=1, shuffle=True)
@@ -335,126 +304,198 @@ def execute_train_test(path_init, sensors, correlation_type, classifier_type):
         y_train = y_train.replace([2, 3, 4, 5, 6], 1)
         y_test = y_test.replace([2, 3, 4, 5, 6], 1)
         
-        y_pred = []
-        y_scores = []
+        y_pred, y_scores = train_predict(classifier_type, X_train, y_train, X_test)
         
-        if classifier_type == "GaussianNB":
-            gnb = GaussianNB()
-            gnb_fit = gnb.fit(X_train, y_train)
-            y_pred = gnb_fit.predict(X_test)
-            y_scores = gnb_fit.predict_proba(X_test)[:,1]
-        elif classifier_type == "LinearSVC":
-            li_svc = LinearSVC(random_state=0)
-            li_svc_fit = li_svc.fit(X_train, y_train)
-            y_pred = li_svc_fit.predict(X_test)
-            y_scores = li_svc_fit.decision_function(X_test)
-        elif classifier_type == "NuSVC":
-            nu_svc = NuSVC()
-            nu_svc_fit = nu_svc.fit(X_train, y_train)
-            y_pred = nu_svc_fit.predict(X_test)
-            y_scores = nu_svc_fit.decision_function(X_test)
-        
-        
-        # Before Optimal Threshold
         cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
         TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
+
+        fpr, tnr, thresholds = roc_curve(y_test, y_scores, pos_label=1)
+        roc_points = []
         point1 = {}
+        point1['label'] = "Non optimal"
+        point1['color'] = "purple"
         point1['fpr'] = 1-(TN/(TN+FP))
-        point1['tpr'] = TP/(TP+FN)
-        point1['label'] = "Non Optimal"
-        point1['color'] = "blue"
-               
-        fpr, tpr, thresholds = roc_curve(y_test, y_scores, pos_label=1)
-        optimal_idx = np.argmax(tpr - fpr)
-        optimal_threshold = thresholds[optimal_idx]
-        y_pred = (y_scores >= optimal_threshold).astype(bool)
+        point1['tnr'] = TP/(TP+FN)
+        roc_points.append(point1)
         
-        # After Optimal Threshold
-        cnf_matrix = confusion_matrix(y_test, y_pred, [0,1]) # conjunto de testes, as previsões e as labels
-        TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
-        point2 = {}
-        point2['fpr'] = 1-(TN/(TN+FP))
-        point2['tpr'] = TP/(TP+FN)
-        point2['label'] = "Optimal"
-        point2['color'] = "red"
+        if optimize == 1:
+            y_pred = optimize_y_pred(y_scores, fpr, tnr, thresholds)
+            cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
+            TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
+            point2 = {}
+            point2['label'] = "Optimal"
+            point2['color'] = "red"
+            point2['fpr'] = 1-(TN/(TN+FP))
+            point2['tnr'] = TP/(TP+FN)
+            roc_points.append(point2)
         
-        #plot_roc_curve(fpr, tpr, [point1, point2])
+        df_results = update_results(df_results, TN, FP, FN, TP)
         
-        results = {}
-        
-        results['TPR'] = TP/(TP+FN)
-        results['TNR'] = TN/(TN+FP)
-        results['PPV'] = TP/(TP+FP)
-        results['NPV'] = TN/(TN+FN)
-        results['ACC'] = (TP+TN)/(TP+FN+TN+FP)
-        
-        df_results = df_results.append(results, ignore_index=True)
-        
+        #plot_roc_curve(fpr, tnr, roc_points)
         #plot_confusion_matrix(cnf_matrix, [0,1])
-        #plot_sensors(X_test, y_test, y_pred)
-        
-        #df_tn, df_fp, df_tp, df_fn = get_tn_fp_tp_fn(X_test, y_test, y_pred)
-        #plot_histogram_df(df_tn)
-        #plot_histogram_df(df_fp)
-        #plot_histogram_df(df_tp)
-        #plot_histogram_df(df_fn)
-      
         n_fold += 1
         
-    print(round(df_results,2))  
     results = round(df_results.describe().loc['mean',:],2).to_dict()
+    print(round(df_results,2))  
     print(results)
     return results
 
+def execute_train_test_simple(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize, label):
+    
+    df = get_dataset(path_init, sensors, correlation_type, data_type, width)
+    df = df.sample(frac = 1, random_state=1).reset_index(drop=True)
+            
+    X = df.iloc[:,:-1]
+    y = df.loc[:,'y']
+            
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=1, stratify=y)
+            
+    y_train = y_train.replace([2, 3, 4, 5, 6], 1)
+    y_test = y_test.replace([2, 3, 4, 5, 6], 1)
+                
+    y_pred, y_scores = train_predict(classifier_type, X_train, y_train, X_test)
+    fpr, tnr, thresholds = roc_curve(y_test, y_scores, pos_label=1)
+                
+    if optimize == 1:
+        y_pred = optimize_y_pred(y_scores, fpr, tnr, thresholds)
+                
+    cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
+    TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
+    
+    auc_value = auc(fpr, tnr)
+    label = label + ' (a=%0.2f)' % auc_value
+    roc_curve_results = {'fpr':fpr,'tnr':tnr,'label':label, 'auc':auc_value}
+                
+    results = get_results(TN, FP, FN, TP)
+
+    for k, v in results.items():
+        results[k] = round(v, 2)
+        
+    results['corr'] = correlation_type
+    results['clf'] = classifier_type
+    results['width'] = width
+    results['opt'] = optimize
+    
+    return roc_curve_results, results
+
+def test_different_number_sensors(path_init, data_type, width, optimize):
+    correlation_types = ["DCCA", "Pearson"]
+    classifier_types = ["GaussianNB","LinearSVC","NuSVC-poly","NuSVC-rbf"]
+    
+    sensors_init = []
+    
+    if(data_type == "q"):
+        sensors_init = ['1', '2', '6', '9', '10']
+    else:
+        sensors_init = ['1', '5', '9', '13', '17']
+    
+    combos = []
+    
+    for i in range(3, 6):
+        combos.append(list(combinations(sensors_init, i)))
+        
+    for correlation_type in correlation_types:
+        for classifier_type in classifier_types:
+            if(optimize == 0):
+                print("\n" + correlation_type  + " & " + classifier_type + " w/o optimization\n")
+            else:
+                print("\n" + correlation_type  + " & " + classifier_type + " w/ optimization\n")
+            roc_curves = pd.DataFrame()
+            df_results = pd.DataFrame()
+            for combo in combos:
+                for sensors in combo:
+                    roc_curve_results, results = execute_train_test_simple(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize, str(list(sensors)))
+                    roc_curve_results['c'] = len(list(sensors))
+                    roc_curves = roc_curves.append(roc_curve_results, ignore_index=True)
+                    results['combo'] = str(list(sensors))
+                    df_results = df_results.append(results, ignore_index=True)
+            
+            idx = roc_curves.groupby(['c'], sort=False)['auc'].max()
+            idx = roc_curves.groupby(['c'])['auc'].transform(max) == roc_curves['auc']
+            roc_curves = roc_curves[idx]
+            
+            print(df_results)
+            #plot_scatter_plot_results(df_results, "Combo")
+            plot_roc_curves(roc_curves, "\n[" + correlation_type  + " w/ " + classifier_type + "]", "Combo")
+
+def test_different_widths(path_init, sensors, data_type, optimize):
+    correlation_types = ["DCCA", "Pearson"]
+    classifier_types = ["GaussianNB","LinearSVC","NuSVC-poly","NuSVC-rbf"]
+    
+    for correlation_type in correlation_types:
+        
+        for classifier_type in classifier_types:
+            
+            if(optimize == 0):
+                print("\n" + correlation_type  + " & " + classifier_type + " w/o optimization\n")
+            else:
+                print("\n" + correlation_type  + " & " + classifier_type + " w/ optimization\n")
+            
+            roc_curves = pd.DataFrame()
+            df_results = pd.DataFrame()
+            for width in range(15, 41, 5):
+                roc_curve_results, results = execute_train_test_simple(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize, str(width))
+                roc_curves = roc_curves.append(roc_curve_results, ignore_index=True)
+                df_results = df_results.append(results, ignore_index=True)
+            
+            print(df_results)
+            #plot_scatter_plot_results(df_results, "Width")
+            plot_roc_curves(roc_curves, "\n[" + correlation_type  + " w/ " + classifier_type + "]", "Width")
+
+def test_different_classifiers_correlations(path_init, sensors, data_type, width, optimize):
+
+    correlation_types = ["Pearson","DCCA"]
+    classifier_types = ["GaussianNB","LinearSVC", "NuSVC-poly","NuSVC-rbf"] #"NuSVC-poly","NuSVC-rbf"
+        
+    for correlation_type in correlation_types:
+        roc_curves = pd.DataFrame()
+        df_results = pd.DataFrame()
+        
+        if(optimize == 0):
+            print("\n" + correlation_type  + " w/o optimization\n")
+        else:
+            print("\n" + correlation_type  + " w/ optimization\n")
+            
+        for classifier_type in classifier_types:
+            roc_curve_results, results = execute_train_test_simple(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize, classifier_type)
+            roc_curves = roc_curves.append(roc_curve_results, ignore_index=True)
+            df_results = df_results.append(results, ignore_index=True)
+        
+        print(df_results)
+        #plot_scatter_plot_results(df_results, "Clf")
+        plot_roc_curves(roc_curves, "w/ " + correlation_type, "Classifier")
 
 
 config = Configuration()
 path_init = config.path
 
-#execute_create_dataset(path_init, "dcca")
-
-sensors_init = ['1', '2', '6', '9', '10']
-correlation_type = "dcca"
-classifier_type = "NuSVC" #"GaussianNB" "NuSVC" "LinearSVC"
-combos = []
-sensors = []
-
-if correlation_type == "pearson":
-    #sensors = ['1', '2', '9']
-    sensors = ['1', '6', '9']
-
-elif correlation_type == "dcca":
-    sensors = ['1', '2', '6', '9', '10'] 
+sensors = [] # Combination chosen
+correlation_type = "Pearson" # "dcca" "Pearson"
+classifier_type = "NuSVC-rbf" #"GaussianNB" "NuSVC-poly" "NuSVC-rbf" "LinearSVC"
+data_type = "q"
+optimize = 0
+width = 40
 
 
-results = execute_train_test(path_init, sensors, correlation_type, classifier_type)
+if(data_type == "q"):
+    sensors = ['1', '2', '6', '9', '10']
+elif(data_type == "p"):
+    #sensors_aux = list(range(1, 21, 2))
+    sensors = ['1', '5', '9', '13', '17']
+    #sensors = ['3', '7', '11', '15', '19']
+else:
+    sensors = ['1', '9', '10', '12', '14', '2', '6', '3', '7', '8', '11', '15'] 
+ 
+#execute_train_test(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize)
+#execute_train_test_real(path_init, correlation_type, classifier_type, data_type, width, optimize)
+
+#test_different_widths(path_init, sensors, data_type, optimize)
+#test_different_number_sensors(path_init, data_type, width, optimize)
+#test_different_classifiers_correlations(path_init, sensors, data_type, width, optimize)
 
 
-"""
-df = pd.DataFrame()
 
-for i in range(3, 6):
-    combos.append(list(combinations(sensors_init, i))) 
 
-for combo in combos:
-    for sensor_list in combo:
-        results = execute_train_test(path_init, list(sensor_list), correlation_type, classifier_type)
-        results['combo'] = str(list(sensor_list))
-        df = df.append(results, ignore_index=True)
         
-print(df)
-"""
-
-
-
-
-
-
-
-
-
-
-
-
-
+              
     

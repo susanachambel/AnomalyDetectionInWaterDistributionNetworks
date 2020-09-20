@@ -34,7 +34,7 @@ def process_simulated_df(df, date_min, date_max):
 def select_data(path_init, wme, data_type, sensor_id, date_min, date_max):
         
     path = path_init + "\\Data\\" + wme + "\\" + data_type + "\\sensor_" + str(sensor_id) + ".csv"
-    df = pd.read_csv(path, delimiter='')
+    df = pd.read_csv(path, delimiter=',') 
     df = process_df(df)
       
     if ((date_min == 1) or (date_max == 1)):
