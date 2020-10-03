@@ -40,7 +40,7 @@ def get_dataset(path_init, sensors, correlation_type, data_type, width):
         if(data_type == 'q'):
             sensors_init = ['1', '2', '6', '9', '10']
         elif(data_type == 'p'):
-            sensors_init_aux = list(range(1, 21, 2))
+            sensors_init_aux = list(range(1, 21, 4))
             for sensor in sensors_init_aux:
                 sensors_init.append(str(sensor))
         
@@ -169,17 +169,18 @@ def plot_scatter_plot_results(df, label):
 
 def plot_roc_curve(fpr, tnr, points):
     lw = 2
-    label = 'ROC curve (area = %0.2f)' % auc(fpr, tnr)
+    label = 'ROC curve (auc=%0.2f)' % auc(fpr, tnr)
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
     plt.plot(fpr, tnr, color='darkorange', lw=lw, label=label)
     for point in points:
         plt.plot(point['fpr'],point['tnr'],'ro',label=point['label'], color=point['color'])
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate [0-1]")
-    plt.ylabel("True Positive Rate [0-1]")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
     plt.title("ROC Curve")
     plt.legend(loc="lower right")
+    #plt.savefig('C:\\Users\\susan\\Desktop\\roc_curve.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
 
 def plot_roc_curves(roc_curves, title, legend_title):   
@@ -187,15 +188,13 @@ def plot_roc_curves(roc_curves, title, legend_title):
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate [0-1]")
-    plt.ylabel("True Positive Rate [0-1]")
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
     plt.title("ROC Curve " + title)
     
     for index, curve in roc_curves.iterrows():
         plt.plot(curve['fpr'], curve['tnr'], lw=lw, label=curve['label'])
     
-    #for curve in roc_curves:
-     #   plt.plot(curve['fpr'], curve['tnr'], lw=lw, label=curve['label'])
     plt.legend(loc="lower right", title=legend_title)
     plt.show()
 
@@ -228,7 +227,8 @@ def execute_train_test_real(path_init, correlation_type, classifier_type, data_t
 
     data_type = "r"
     sensors = ['1', '9', '10', '12', '14', '2', '6', '3', '7', '8', '11', '15'] 
-            
+    sensors = ['1', '9', '12', '14', '2']     
+       
     df = get_dataset(path_init, sensors, correlation_type, data_type, width)
     
     n_loc = 7
@@ -236,8 +236,8 @@ def execute_train_test_real(path_init, correlation_type, classifier_type, data_t
         n_loc = 9
     
     sensors_in = df.isnull().sum().sort_values(ascending = False).iloc[n_loc:].index.to_numpy()
-    
     df = df.loc[:, sensors_in].dropna()
+        
     df = df.sample(frac = 1, random_state=1).reset_index(drop=True)
      
     n_splits = len(df[df['y']==1])
@@ -274,8 +274,8 @@ def execute_train_test_real(path_init, correlation_type, classifier_type, data_t
             point2['tnr'] = TP/(TP+FN)
             roc_points.append(point2)
         
-        #plot_roc_curve(fpr, tnr, roc_points)
-        plot_confusion_matrix(cnf_matrix, [0,1])
+        plot_roc_curve(fpr, tnr, roc_points)
+        #plot_confusion_matrix(cnf_matrix, [0,1])
         n_fold += 1
             
     results = round(df_results.describe().loc['mean',:],2).to_dict()
@@ -286,6 +286,7 @@ def execute_train_test(path_init, sensors, correlation_type, classifier_type, da
     
     df = get_dataset(path_init, sensors, correlation_type, data_type, width)
     df = df.sample(frac = 1, random_state=1).reset_index(drop=True)
+    
     
     n_splits = 5
     skf = StratifiedKFold(n_splits=n_splits, random_state=1, shuffle=True)
@@ -300,7 +301,7 @@ def execute_train_test(path_init, sensors, correlation_type, classifier_type, da
     
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-                
+        
         y_train = y_train.replace([2, 3, 4, 5, 6], 1)
         y_test = y_test.replace([2, 3, 4, 5, 6], 1)
         
@@ -379,8 +380,8 @@ def execute_train_test_simple(path_init, sensors, correlation_type, classifier_t
     return roc_curve_results, results
 
 def test_different_number_sensors(path_init, data_type, width, optimize):
-    correlation_types = ["DCCA", "Pearson"]
-    classifier_types = ["GaussianNB","LinearSVC","NuSVC-poly","NuSVC-rbf"]
+    correlation_types = ["DCCA"] #, "Pearson"
+    classifier_types = ["NuSVC-rbf"] #"GaussianNB","LinearSVC","NuSVC-poly",
     
     sensors_init = []
     
@@ -420,7 +421,7 @@ def test_different_number_sensors(path_init, data_type, width, optimize):
 
 def test_different_widths(path_init, sensors, data_type, optimize):
     correlation_types = ["DCCA", "Pearson"]
-    classifier_types = ["GaussianNB","LinearSVC","NuSVC-poly","NuSVC-rbf"]
+    classifier_types = ["NuSVC-rbf"] #"GaussianNB","LinearSVC","NuSVC-poly",
     
     for correlation_type in correlation_types:
         
@@ -433,7 +434,7 @@ def test_different_widths(path_init, sensors, data_type, optimize):
             
             roc_curves = pd.DataFrame()
             df_results = pd.DataFrame()
-            for width in range(15, 41, 5):
+            for width in range(30, 41, 5): #15
                 roc_curve_results, results = execute_train_test_simple(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize, str(width))
                 roc_curves = roc_curves.append(roc_curve_results, ignore_index=True)
                 df_results = df_results.append(results, ignore_index=True)
@@ -444,7 +445,7 @@ def test_different_widths(path_init, sensors, data_type, optimize):
 
 def test_different_classifiers_correlations(path_init, sensors, data_type, width, optimize):
 
-    correlation_types = ["Pearson","DCCA"]
+    correlation_types = ["DCCA"] #"Pearson",
     classifier_types = ["GaussianNB","LinearSVC", "NuSVC-poly","NuSVC-rbf"] #"NuSVC-poly","NuSVC-rbf"
         
     for correlation_type in correlation_types:
@@ -470,10 +471,10 @@ config = Configuration()
 path_init = config.path
 
 sensors = [] # Combination chosen
-correlation_type = "Pearson" # "dcca" "Pearson"
-classifier_type = "NuSVC-rbf" #"GaussianNB" "NuSVC-poly" "NuSVC-rbf" "LinearSVC"
+correlation_type = "DCCA" # "DCCA" "Pearson"
+classifier_type = "LinearSVC" #"GaussianNB" "NuSVC-poly" "NuSVC-rbf" "LinearSVC"
 data_type = "q"
-optimize = 0
+optimize = 1
 width = 40
 
 
@@ -483,10 +484,8 @@ elif(data_type == "p"):
     #sensors_aux = list(range(1, 21, 2))
     sensors = ['1', '5', '9', '13', '17']
     #sensors = ['3', '7', '11', '15', '19']
-else:
-    sensors = ['1', '9', '10', '12', '14', '2', '6', '3', '7', '8', '11', '15'] 
  
-#execute_train_test(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize)
+execute_train_test(path_init, sensors, correlation_type, classifier_type, data_type, width, optimize)
 #execute_train_test_real(path_init, correlation_type, classifier_type, data_type, width, optimize)
 
 #test_different_widths(path_init, sensors, data_type, optimize)

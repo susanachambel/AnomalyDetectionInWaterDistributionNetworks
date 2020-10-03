@@ -66,10 +66,6 @@ def get_dataset_wo_event(path_init, df_events, df_sensors, correlation_type):
     combos_flow = list(combinations(df_flow.loc[:,'id'].to_numpy(), 2))
     combos_pressure = list(combinations(df_pressure.loc[:,'id'].to_numpy(), 2))
     
-    
-    print(df_flow)
-    print(df_pressure)
-    
     df_corr = pd.DataFrame()
     
     for chunk_limit,chunk in dfs.resample('1h'):
@@ -110,13 +106,17 @@ def get_dataset_w_event(path_init, df_events, df_sensors, correlation_type):
     
     for index_event, event in df_events.iterrows():
         
-        date3 = event['date_detected']
-        
+        #date3 = event['date_detected']
+        date3 = event['date_water_closed']
         
         if(isinstance(date3, pd.Timestamp)):
         
             date2 = date3 - timedelta(hours=1, minutes=0)
-            date1 = date2 - timedelta(hours=1, minutes=0) 
+            date1 = date2 - timedelta(hours=1, minutes=0)
+            
+            #date2 = date3 - timedelta(hours=0, minutes=30)
+            #date3 = date3 + timedelta(hours=0, minutes=30)
+            #date1 = date2 - timedelta(hours=1, minutes=0)            
             
             dfs = pd.DataFrame()
             
@@ -148,7 +148,7 @@ path_init = config.path
 df_events = get_df_events(path_init)
 df_sensors = get_df_sensors(path_init)
 
-for correlation_type in ['pearson', 'dcca']:
+for correlation_type in ['dcca', 'pearson']:
 
     df_corr_diff1 = get_dataset_wo_event(path_init, df_events, df_sensors, correlation_type)
     df_corr_diff2 = get_dataset_w_event(path_init, df_events, df_sensors, correlation_type)
@@ -158,5 +158,5 @@ for correlation_type in ['pearson', 'dcca']:
     print(df_corr_diff)
     
     path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data\\dataset_r_' + correlation_type + '.csv'
-    #df_corr_diff.to_csv(index=True, path_or_buf=path_export)
+    df_corr_diff.to_csv(index=True, path_or_buf=path_export)
 
