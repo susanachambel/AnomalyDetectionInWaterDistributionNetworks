@@ -181,14 +181,14 @@ config = Configuration()
 path_init = config.path
 data_type = "p"
 ea = EventArchive(path_init, data_type)
-correlation_types = ["dcca","pearson"]
+correlation_types = ["dcca"] #dcca pearson
 
 event_range_min = 1
 event_range_max = 18696
 
 sensors = []
 if(data_type == "p"):
-    sensors_aux = list(range(1,21, 4))
+    sensors_aux = list(range(1,21, 1))
     for sensor in sensors_aux:
         sensors.append(str(sensor))
 else:
@@ -227,7 +227,7 @@ for correlation_type in correlation_types:
 
 for correlation_type in correlation_types:
 
-    for width in range(40, 41, 1):
+    for width in range(15, 36, 5):
         
         df_diff = {}
         for combo in combos:
