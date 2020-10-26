@@ -24,7 +24,9 @@ class EventArchive:
             path += '\\Data\\infraquinta\\events\\Event_Q\\event_' + str(event_id) + '.csv'
         elif self.option == "p":
             path += '\\Data\\infraquinta\\events\\Event_P\\event_' + str(event_id) + '.csv'
-        
+        elif self.option == "all":
+            path += '\\Data\\infraquinta\\events\\Event_All\\event_' + str(event_id) + '.csv'
+            
         df = pd.read_csv(path, index_col=0) 
         return df
         

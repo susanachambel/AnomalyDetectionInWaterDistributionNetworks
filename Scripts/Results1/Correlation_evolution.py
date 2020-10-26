@@ -20,6 +20,7 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
 import numpy as np
 from itertools import combinations, product
+from statsmodels.tsa.seasonal import seasonal_decompose
 
 def get_combo_name(combo):
     return str(combo[0]) + "-" + str(combo[1])
@@ -28,7 +29,7 @@ def get_combo_name_2(sensor1, sensor2):
     return str(sensor1) + "-" + str(sensor2)
 
 def heatmap(data, row_labels, col_labels, ax=None,
-            cbar_kw={}, cbarlabel="", **kwargs):
+            cbar_kw={}, cbarlabel="", title="", **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
 
@@ -55,13 +56,15 @@ def heatmap(data, row_labels, col_labels, ax=None,
         ax = plt.gca()
 
     # Plot the heatmap
-    im = ax.imshow(data, **kwargs, clim=(-1,1))
-
+    im = ax.pcolormesh(data, **kwargs, vmin=-1, vmax=1)
+    
+    """
     # Create colorbar
     cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw, pad=0.02)
     cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
     cbar.outline.set_visible(False)
-
+    """
+    
     # We want to show all ticks...
     ax.set_xticks(np.arange(data.shape[1]))
     ax.set_yticks(np.arange(data.shape[0]))
@@ -69,13 +72,16 @@ def heatmap(data, row_labels, col_labels, ax=None,
     ax.set_xticklabels(col_labels)
     ax.set_yticklabels(row_labels)
     
+    ax.invert_yaxis()
     
+    """
     plt.text(-0.04, 0.60, 'Pressure\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center")
     plt.text(-0.04, 0.10, 'Volumetric Flowrate\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center")
-
     plt.text(0.405, -0.04, 'Pressure\nSensors', color='k', transform=ax.transAxes, va="center", ha="center")
     plt.text(0.905, -0.04, 'Volumetric Flowrate\nSensors', color='k', transform=ax.transAxes, va="center", ha="center")
+    """
     
+    """
     # Let the horizontal axes labeling appear on top.
     ax.tick_params(top=False, bottom=True,
                    labeltop=False, labelbottom=True)
@@ -83,23 +89,29 @@ def heatmap(data, row_labels, col_labels, ax=None,
     # Rotate the tick labels and set their alignment.
     plt.setp(ax.get_xticklabels(), rotation=0, ha="center", #45
              rotation_mode="anchor")
-
+    """
     # Turn spines off and create white grid.
     for edge, spine in ax.spines.items():
         spine.set_visible(False)
 
     #ax.set_xticks(np.arange(data.shape[1]+1)-.5, minor=True)
     #ax.set_yticks(np.arange(data.shape[0]+1)-.5, minor=True)
+    """
     ax.set_xticks(np.arange(data.shape[1]), minor=True)
     ax.set_yticks(np.arange(data.shape[0]), minor=True)
+    """
+    ax.axis('off')
     
+    ax.set_title(title)
     
-    ax.hlines([20.5], *ax.get_xlim(), color='white', linewidth=4)
-    ax.vlines([20.5], *ax.get_ylim(), color='white', linewidth=4)
+    ax.hlines([21.0], *ax.get_xlim(), color='white', linewidth=1.5)
+    ax.vlines([21.0], *ax.get_ylim(), color='white', linewidth=1.5)
+    
+
     
     ax.grid(which="minor", color="w", linestyle='-', linewidth=4)
-    ax.tick_params(which="minor", bottom=False, left=False)
-
+    #ax.tick_params(which="minor", bottom=False, left=False)
+    cbar = None
     return im, cbar
 
 def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
@@ -198,154 +210,187 @@ def get_sensors_n(data_type):
     return sensors, n
 
 def get_df(path_init, data_type, width, correlation_type):
-    
-    if data_type == 'all':
-        path = path_init + '\\Data\\infraquinta\\events\\Organized_Data_3\\dataset_' + correlation_type.lower() +'_' + str(width) + '.csv'
+    if data_type == 'r':
+        path = path_init + '\\Data\\infraquinta\\events\\Organized_Data_3\\dataset_r_' + correlation_type.lower() +'_' + str(width) + '.csv'
+        df = pd.read_csv(path, index_col=0)
+        df['init'] = pd.to_datetime(df['init'], format='%Y/%m/%d %H:%M:%S')
+        df['final'] = pd.to_datetime(df['final'], format='%Y/%m/%d %H:%M:%S')
+        df.index = df['init']
+        del df['init']
     else:
-        path = path_init + '\\Data\\infraquinta\\events\\Organized_Data_2\\dataset_'+ data_type + '_' + correlation_type.lower() +'_' + str(width) + '.csv'
+        path = path_init + '\\Data\\infraquinta\\events\\Organized_Data_4\\dataset_' + correlation_type.lower() +'_' + str(width) + '.csv'
+        df = pd.read_csv(path, index_col=0)
     
-    df = pd.read_csv(path, index_col=0)
     columns = df.columns
     return df, columns
 
-def get_df_all_k(path_init, width, correlation_type, dcca_k):
-    path = path_init + '\\Data\\infraquinta\\events\\Organized_Data_3\\dataset_' + correlation_type.lower() +'_' + str(width) + '_' + str(dcca_k) + '.csv'
-    df = pd.read_csv(path, index_col=0)
-    columns = df.columns
-    return df, columns
+def get_df_events(path_init):
+    df_events = pd.read_csv(path_init + "\\Data\\events_ruturas_infraquinta_2017.csv", sep=';')
+    df_events['date_executed'] = pd.to_datetime(df_events['date_executed'], format='%Y/%m/%d %H:%M:%S')
+    df_events['date_detected'] = pd.to_datetime(df_events['date_detected'], format='%Y/%m/%d %H:%M:%S')
+    df_events['date_water_closed'] = pd.to_datetime(df_events['date_water_closed'], format='%Y/%m/%d %H:%M:%S')
+    df_events['date_water_opened'] = pd.to_datetime(df_events['date_water_opened'], format='%Y/%m/%d %H:%M:%S')
+    df_events['date_possible'] = pd.to_datetime(df_events['date_possible'], format='%Y/%m/%d %H:%M:%S')
+    df_events['date_start'] = pd.to_datetime(df_events['date_start'], format='%Y/%m/%d %H:%M:%S')
+    df_events['date_end'] = pd.to_datetime(df_events['date_end'], format='%Y/%m/%d %H:%M:%S')
+    df_events = df_events[df_events['read'] == 'y']
+    return df_events
 
+def decompose(df):
+    res = seasonal_decompose(df, model='additive', period=4)
+    residual = res.resid
+    seasonal = res.seasonal 
+    trend = res.trend
+    return trend
 
-def leakage_sizes(path_init):
+def correlation_evolution_s(path_init):
 
     width = 40
     correlation_type = 'dcca'
-    data_types = ['all']
-    
-    for data_type in data_types:
-    
-        sensors, n = get_sensors_n(data_type)
-        df, columns = get_df(path_init, data_type, width, correlation_type)
-        
-        event_id_init = 1393
-        event_id_final = event_id_init+9
-        events_id = []
-        events_id.extend(list(range(event_id_init-1, event_id_final+1, 2)))
-        
-        for event_id in events_id: #37-46, 1393-1402
-            
-            df_row = df.iloc[event_id,:]
-            print(df_row)
-            correlations = get_correlation_map_simulated(sensors, columns, df_row)
-                
-            fig, ax = plt.subplots(figsize=(6.4*n,4.8*n)) #23 13
-            im, cbar = heatmap(correlations, sensors, sensors, ax=ax,
-                               cmap="RdBu", cbarlabel=correlation_type.upper())
-            annotate_heatmap(im, valfmt="{x:.2f}", threshold=0)
-            fig.tight_layout()
-            plt.savefig(path_init + '\\Images\\Results1\\Leakage Sizes\\' + data_type + '_' + correlation_type + '_' + str(width) + '_' + str(event_id) + '.png', format='png', dpi=300, bbox_inches='tight')
-            plt.show()
-            plt.close(fig=fig)
-            
-
-def window_sizes(path_init):
-    
-    correlation_type = 'dcca'
-    data_types = ['all']
-    events_id = [1393, 1402]
-    
-    for data_type in data_types:
-    
-        for event_id in events_id:
-        
-            sensors, n = get_sensors_n(data_type)
-            
-            for width in range(16, 41, 2):
-                df, columns = get_df(path_init, data_type, width, correlation_type)
-                df_row = df.iloc[event_id,:]
-                print(df_row)
-                correlations = get_correlation_map_simulated(sensors, columns, df_row)
-                
-                fig, ax = plt.subplots(figsize=(6.4*n,4.8*n)) #23 13
-                
-                im, cbar = heatmap(correlations, sensors, sensors, ax=ax,
-                                   cmap="RdBu", cbarlabel=correlation_type.upper()) #RdBu
-                annotate_heatmap(im, valfmt="{x:.2f}", threshold=0)
-                fig.tight_layout()
-                plt.savefig(path_init + '\\Images\\Results1\\Window Sizes\\' + str(event_id) +'\\' + data_type + '_' + correlation_type + '_' + str(width) + '_' + str(event_id) + '.png', format='png', dpi=300, bbox_inches='tight')
-                plt.show()
-                plt.close(fig=fig)
-            
-
-
-def correlation_methods(path_init):
-    
-    correlation_types = ['dcca','pearson']
-    width = 40
-    events_id = [1393, 1402]
-    data_types = ['all']
-    
-    for correlation_type in correlation_types:
-    
-        for data_type in data_types:
-            
-            sensors, n = get_sensors_n(data_type)
-            df, columns = get_df(path_init, data_type, width, correlation_type)
-        
-            for event_id in events_id:
-    
-                df_row = df.iloc[event_id,:]
-                print(df_row)
-                correlations = get_correlation_map_simulated(sensors, columns, df_row)
-                        
-                if(correlation_type == 'dcca'):
-                    correlation_type_aux = 'DCCA'
-                else:
-                    correlation_type_aux = 'PCC'
-                
-                fig, ax = plt.subplots(figsize=(6.4*n,4.8*n)) #23 13
-                im, cbar = heatmap(correlations, sensors, sensors, ax=ax,
-                                   cmap="RdBu", cbarlabel=correlation_type_aux) #RdBu
-                annotate_heatmap(im, valfmt="{x:.2f}", threshold=0)
-                fig.tight_layout()
-                plt.savefig(path_init + '\\Images\\Results1\\Correlation Methods\\' + data_type + '_' + correlation_type + '_' + str(width) + '_' + str(event_id) + '.png', format='png', dpi=300, bbox_inches='tight')
-                plt.show()
-                plt.close(fig=fig)
-
-def dcca_k(path_init):
-    
-    correlation_type = 'dcca'
-    width = 40
-    events_id = [1, 10]
     data_type = 'all'
     
-    for dcca_k in range(2, 11, 1):
-            
-        sensors, n = get_sensors_n(data_type)
-        df, columns = get_df_all_k(path_init, width, correlation_type, dcca_k)
-        
-        print(df)
-        
-        for event_id in events_id:
+    row_names = ['1-4', '22-25', '1-25']
     
-            df_row = df.iloc[event_id,:]
-            print(df_row)
-            correlations = get_correlation_map_simulated(sensors, columns, df_row)
-            
-            fig, ax = plt.subplots(figsize=(6.4*n,4.8*n)) #23 13
-            im, cbar = heatmap(correlations, sensors, sensors, ax=ax, cmap="RdBu", cbarlabel="DCCA") #RdBu
-            annotate_heatmap(im, valfmt="{x:.2f}", threshold=0.25)
-            fig.tight_layout()
-            plt.savefig(path_init + '\\Images\\Results1\\DCCA K\\' + data_type + '_' + correlation_type + '_' + str(width) + '_' + str(dcca_k) + '_' + str(event_id) + '.png', format='png', dpi=300, bbox_inches='tight')
-            plt.show()
-            plt.close(fig=fig)
+    df, columns = get_df(path_init, data_type, width, correlation_type)    
         
+    event_id_init = 0
+    event_id_final = 105
+    events_id = list(range(event_id_init, event_id_final+1, 1))
+    
+    titles = row_names
+    
+    x = []
+    for event_id in events_id:
+        x.append(event_id*600)
+    
+    fig, axs = plt.subplots(3, 1, figsize=(11.4, 6.8),sharey=True, sharex=True)
+    
+    i=0
+    for ax in axs.flat:
+        
+        title = titles[i]
+        y = df[title].to_numpy()
 
+        ax.plot(x, y,color='tab:blue')
+            
+        
+        ax.grid(True, axis='y', alpha=0.3)
+        
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(8*600))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(4*600))
+        
+        ax.axvspan(48600, 63000, color='tab:red', alpha=0.1, label="Leakage")
+        
+        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+        
+        title_split = title.split('-')
+        title = 'Sensors ' + title_split[0] + ' & ' + title_split[1]        
+        if i == 1:
+            ax.set_ylabel('DCCA')
+            title += ' (two flowrate sensors)'
+        elif i == 2:
+            ax.set_xlabel('Time Point')
+            ax.legend()
+            title += ' (one sensor of each type)'
+        else:
+            title += ' (two pressure sensors)'
+        ax.set_title(title) 
+        i+=1
+       
+    plt.ylim(-1,1)
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results1\\Correlation Evolution\\correlation_evolution_lc.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close(fig=fig)
+        
+       
 
 config = Configuration()
 path_init = config.path
 
-window_sizes(path_init)
-leakage_sizes(path_init)
-correlation_methods(path_init)
+#correlation_evolution_s(path_init)
 
-dcca_k(path_init)
+color1 = 'tab:blue'
+color2 = 'tab:red'
+
+
+df_events = get_df_events(path_init)
+
+flow = [1, 2, 6, 10, 12, 14] #9
+pressure = [3, 7, 8, 11, 13, 15]
+sensors = flow
+#sensors.extend(pressure)
+correlation_type = 'pearson'
+combos = list(combinations(sensors, 2))
+
+data_type = 'r'
+width = 60
+correlation_type = 'dcca'
+df, columns = get_df(path_init, data_type, width, correlation_type)
+
+
+#df_events.iloc[0]
+event = df_events.iloc[0,:]
+
+init = event['date_start']
+end = event['date_end']
+
+mask = ((df.index >= init) & (df.index <= end))
+df = df[mask]
+
+print(df)
+locator = mdates.HourLocator(interval=2)
+formatter = mdates.ConciseDateFormatter(locator)
+locator_min = mdates.HourLocator(interval=2)
+
+
+m = len(combos)
+fig, axs = plt.subplots(m, 1, figsize=(11.4, 3.8*m),sharey=True, sharex=True)
+
+i=0
+for ax in axs.flat:
+        
+    combo = get_combo_name(combos[i])
+    df_aux = df.loc[:,combo]
+    
+    df_aux = decompose(df_aux)
+        
+    ax.plot(df_aux, color=color1)
+    ax.axvline(x=event['date_detected'], color=color2, linestyle='--', linewidth=1.25, label="Report of Leakage")
+    
+    combo_split = combo.split('-')
+    title = 'Sensors ' + combo_split[0] + ' & ' + combo_split[1]
+    ax.set_title(title)
+    ax.grid(True, axis='y', alpha=0.3)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(formatter)
+    ax.xaxis.set_minor_locator(locator_min)
+    
+    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+    i+=1
+
+#plt.ylim(-1,1)
+
+fig.tight_layout()
+plt.show()
+plt.close(fig=fig)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

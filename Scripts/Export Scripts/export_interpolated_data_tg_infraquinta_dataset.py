@@ -158,5 +158,5 @@ for correlation_type in ['dcca', 'pearson']:
     print(df_corr_diff)
     
     path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data\\dataset_r_' + correlation_type + '.csv'
-    df_corr_diff.to_csv(index=True, path_or_buf=path_export)
+    #df_corr_diff.to_csv(index=True, path_or_buf=path_export)
 

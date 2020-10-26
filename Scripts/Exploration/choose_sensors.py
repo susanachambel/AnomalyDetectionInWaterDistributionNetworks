@@ -114,7 +114,7 @@ for index_event, event in df_events.iterrows():
             i += 1
          
     
-    plt.savefig(path_init + "\\Reports\\Events\\" + str(j) + "_" + event['date_end'].split(" ")[0] + '_event.png', format='png', dpi=300, bbox_inches='tight')
+    #plt.savefig(path_init + "\\Reports\\Events\\" + str(j) + "_" + event['date_end'].split(" ")[0] + '_event.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
 
     j += 1
