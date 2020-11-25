@@ -10,20 +10,26 @@ sys.path.append('../Functions')
 from configuration import *
 from event_archive_2 import *
 from correlation import *
-from sklearn.model_selection import StratifiedKFold, train_test_split
+
 from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2, f_classif, mutual_info_classif
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import plot_roc_curve
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import LinearSVC, NuSVC
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+
 from itertools import combinations, product
-from sklearn.feature_selection import RFECV
-from sklearn.feature_selection import chi2, f_classif, mutual_info_classif
+import statistics as stats
 import pandas as pd
 import numpy as np
-import statistics as stats
+import decimal
+
+from functools import partial
 
 def get_dataset(path_init, correlation_type, data_type, width):
     path = ''  
@@ -52,17 +58,37 @@ def update_results(df_results, TN, FP, FN, TP, auc_score):
 def get_results(TN, FP, FN, TP, auc_score):
     results = {}
     
-    precision = TP/(TP+FP)
-    recall = TP/(TP+FN)
+    if(TP+FP == 0):
+        precision = 0
+    else:
+        precision = TP/(TP+FP)
+        
+    if(TP+FN == 0):
+        recall = 0
+    else:
+        recall = TP/(TP+FN)
+        
+    if(TN+FN == 0):
+        results['NPV'] = 0
+    else:
+        results['NPV'] = TN/(TN+FN)
+        
+    if(TN+FP == 0):
+        results['TNR'] = 0
+    else:
+        results['TNR'] = TN/(TN+FP)
     
     if(auc_score is not None):
         results['AUC'] = auc_score
+        
+    if((precision == 0) & (recall == 0)):
+        results['F1'] = 0
+    else:
+        results['F1'] = 2*((precision*recall)/(precision+recall)) 
     
     results['recall'] = recall
-    results['TNR'] = TN/(TN+FP)
     results['precision'] = precision
-    results['NPV'] = TN/(TN+FN)
-    results['F1'] = 2*((precision*recall)/(precision+recall))
+    
     results['ACC'] = (TP+TN)/(TP+FN+TN+FP)
     return results
 
@@ -109,19 +135,23 @@ def plot_confusion_matrix(cnf_matrix, classesNames, normalize=False, cmap=plt.cm
     plt.xlabel('Predicted label')
     plt.show()
 
-def plot_roc_curve(fpr, tnr):
+def plot_roc_curve_mine(fpr, tnr):
     lw = 2
-    label = 'ROC curve (auc=%0.2f)' % auc(fpr, tnr)
-    plt.figure(figsize=[7.4, 4.8])
-    plt.plot(fpr, tnr, color='#FF7F50', lw=lw, label=label)
-    plt.plot([0, 1], [0, 1], color='#8F7F7A', lw=lw, linestyle='--', label='Chance (auc=0.50)')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
+    label = 'ROC curve (AUC = %0.2f)' % auc(fpr, tnr)
+    fig, ax = plt.subplots(figsize=(6, 5))
+    plt.plot(fpr, tnr, color='tab:orange', lw=lw, label=label)
+    plt.plot([0, 1], [0, 1], color='tab:grey', lw=lw, linestyle='--', label='Chance (AUC = 0.50)')
+    plt.xlim([-0.05, 1.05])
+    plt.ylim([-0.05, 1.05])
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
-    plt.title("ROC Curve")
+    
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+    ax.grid(True, axis='y', alpha=0.3)
+    #plt.title("ROC Curve")
     plt.legend(loc="lower right")
-    plt.savefig(path_init + '\\Images\\roc_curve_example.png', format='png', dpi=300, bbox_inches='tight')
+    #plt.savefig(path_init + '\\Images\\roc_curve_example.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
 
 def select_sensors(sensors_init_aux):
@@ -143,7 +173,8 @@ def select_features(X_train, y_train, X_test, sensors_init_aux, selection_type, 
         selector = SelectKBest(f_classif, k=n_features).fit(X_train, y_train) 
         combos_str = selector.get_support()        
     elif selection_type == 'mutual_info_classif':
-        selector = SelectKBest(mutual_info_classif, k=n_features).fit(X_train, y_train) 
+        my_score = partial(mutual_info_classif, discrete_features=False, random_state=1)
+        selector = SelectKBest(score_func=my_score, k=n_features).fit(X_train, y_train) 
         combos_str = selector.get_support()
     else:
         return X_train, X_test
@@ -166,7 +197,8 @@ def select_features_2(X_train, y_train, X_test, sensors_init_aux, selection_type
         elif selection_type == 'f_classif':
             selector = SelectKBest(f_classif, k=n_features).fit(X_train, y_train)
         elif selection_type == 'mutual_info_classif':
-            selector = SelectKBest(mutual_info_classif, k=n_features).fit(X_train, y_train) 
+            my_score = partial(mutual_info_classif, discrete_features=False, random_state=1)
+            selector = SelectKBest(score_func=my_score, k=n_features).fit(X_train, y_train)
         combos_str = selector.get_support()
         scores = selector.scores_[combos_str]
         combos_str = list(X_train.loc[:,combos_str])
@@ -221,7 +253,6 @@ def get_combos(X_train, y_train, sensors_init_aux, n_features, n_top):
     #combos_str.append('y')
     #print(len(combos_str))
     return combos_str, list(df_aux['diff'])
-
 
 def get_combos_2(X_train, y_train, sensors_init_aux, n_features):
     df_train = X_train.copy()
@@ -281,40 +312,33 @@ def get_df_train_test(df):
     df_test['y'] = y_test
     return df_train, df_test
 
-def final_test(df_train, df_test, optimal_threshold):
+def final_test(classifier_type, df_train, df_test, sensors_init_aux, selection_type, n_features, optimal_threshold):
 
     X_train = df_train.iloc[:,:-1]
     y_train = df_train.loc[:,'y']
     X_test = df_test.iloc[:,:-1]
     y_test = df_test.loc[:,'y']
     
-    combos_str, _ = get_combos(df_train)
-    X_train = X_train.loc[:,combos_str]
-    X_test = X_test.loc[:,combos_str]
-    
     y_train = y_train.replace([2, 3, 4, 5, 6], 1)
     y_test = y_test.replace([2, 3, 4, 5, 6], 1)
     
-    #clf = NuSVC(random_state=1, kernel='rbf')
-    clf = GaussianNB()
+    X_train, X_test = select_features(X_train, y_train, X_test, sensors_init_aux, selection_type, n_features)
     
-    y_pred = []
     
-    if optimal_threshold is None:
-        y_pred = clf.fit(X_train, y_train).predict(X_test)
+    if (optimal_threshold == None):
+        y_pred, y_scores = train_predict(classifier_type, X_train, y_train, X_test, "both")
     else:
-        #y_scores = clf.fit(X_train, y_train).decision_function(X_test)
-        y_scores = clf.fit(X_train, y_train).predict_proba(X_test)[:,1]
+        y_scores = train_predict(classifier_type, X_train, y_train, X_test, "scores")
         y_pred = (y_scores >= optimal_threshold).astype(bool)
         
     cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
     TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
         
-    results = get_results(TN, FP, FN, TP)
+    results = get_results(TN, FP, FN, TP, 0)
     
     plot_confusion_matrix(cnf_matrix, [0,1])
     
-    print(results)
+    return results, y_scores
 
 def cross_validation(df_train):
 
@@ -364,7 +388,7 @@ def cross_validation(df_train):
         df_results = update_results(df_results, TN, FP, FN, TP)
         
         #plot_confusion_matrix(cnf_matrix, [0,1])
-        plot_roc_curve(fpr, tnr)
+        plot_roc_curve_mine(fpr, tnr)
     results = round(df_results.describe().loc['mean',:],2).to_dict()
     print(round(df_results,2))  
     print(results)
@@ -410,24 +434,29 @@ def train_predict(classifier_type, X_train, y_train, X_test, option):
         return clf_fit.predict(X_test)
     elif option == 'scores':
         if classifier_type == "GaussianNB":
-            return clf_fit.predict_proba(X_test)[:,1]
+            scores = clf_fit.predict_proba(X_test)
+            c = scores[:,1]-scores[:,0]
+            y_scores = scores[:,1]
+            y_scores = c
+            return y_scores
         else:
             return clf_fit.decision_function(X_test)
     else:
         y_pred = clf_fit.predict(X_test)
         if classifier_type == "GaussianNB":
-            y_scores = clf_fit.predict_proba(X_test)[:,1]
+            scores = clf_fit.predict_proba(X_test)
+            c = scores[:,1]-scores[:,0]
+            y_scores = scores[:,1]
+            y_scores = c
         else:
             y_scores = clf_fit.decision_function(X_test)
         return y_pred, y_scores
     
 def cross_validation_2(classifier_type, df_train, sensors_init_aux, selection_type, n_features):
-    
+    optimal_thresholds = []
     df_results = pd.DataFrame()
-    
     X = df_train.iloc[:,:-1]
     y = df_train.loc[:,'y']
-    
     skf = StratifiedKFold(n_splits=5, random_state=1, shuffle=True)
     for train_index, test_index in skf.split(X, y):
     
@@ -448,17 +477,156 @@ def cross_validation_2(classifier_type, df_train, sensors_init_aux, selection_ty
         
         auc_score = auc(fpr, tnr)
         
+        _ , optimal_threshold = optimize_y_pred(y_scores, fpr, tnr, thresholds)
+        
+        optimal_thresholds.append(optimal_threshold)
+        
         cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
         TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
         df_results = update_results(df_results, TN, FP, FN, TP, auc_score)
         
-        plot_confusion_matrix(cnf_matrix, [0,1])
-        plot_roc_curve(fpr, tnr)
-        
+        #plot_confusion_matrix(cnf_matrix, [0,1])
+        #plot_roc_curve_mine(fpr, tnr)
+    
+    optimal_thresholds.append(round(stats.mean(optimal_thresholds),4))
     results = round(df_results.describe().loc['mean',:],2).to_dict()
-    print(round(df_results,2))  
+    #print(round(df_results,2))  
     #print(results)
-    return results
+    return results, optimal_thresholds
+
+def cross_validation_3(df_train, sensors_init_aux, params):
+    
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10.5,5), sharey=True)
+    
+    for j, ax in enumerate(axs.flat):    
+        classifier_type = params[j][0]
+        selection_type = params[j][1]
+        n_features = params[j][2]
+        
+        if classifier_type == "GaussianNB":
+            clf = GaussianNB()
+            response_method = "predict_proba"
+            title = "Naive Bayes"
+        elif classifier_type == "LinearSVC":
+            clf = LinearSVC(random_state=1, max_iter=3000) #max_iter=10000
+            response_method = "decision_function"
+            title = "SVM w/ Linear Kernel"
+            ax.set_ylabel('')
+        elif classifier_type == "NuSVC-rbf":
+            clf = NuSVC(random_state=1, kernel='rbf') # class_weight='balanced', nu=0.0000001,
+            response_method = "decision_function"
+            title = "SVM (RBF)"
+        elif classifier_type == "NuSVC-poly":
+            clf = NuSVC(random_state=1, kernel='poly',degree=3)
+            response_method = "decision_function"
+            title = "SVM (Poly)"
+            
+        tprs = []
+        aucs = []
+        mean_fpr = np.linspace(0, 1, 100)
+        X = df_train.iloc[:,:-1]
+        y = df_train.loc[:,'y']
+        skf = StratifiedKFold(n_splits=5, random_state=1, shuffle=True)
+        for i, (train_index, test_index) in enumerate(skf.split(X, y)):
+        
+            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+            y_train = y_train.replace([2, 3, 4, 5, 6], 1)
+            y_test = y_test.replace([2, 3, 4, 5, 6], 1)
+            
+            df_train_fold = X_train.copy()
+            df_train_fold['y'] = y_train
+    
+            X_train, X_test = select_features(X_train, y_train, X_test, sensors_init_aux, selection_type, n_features)        
+    
+            clf_fit = clf.fit(X_train, y_train)
+            viz = plot_roc_curve(clf_fit, X_test, y_test,
+                        name='ROC fold {}'.format(i),
+                        alpha=0.3, lw=1, ax=ax, response_method=response_method)
+            interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
+            interp_tpr[0] = 0.0
+            tprs.append(interp_tpr)
+            aucs.append(viz.roc_auc)
+            
+        ax.plot([0, 1], [0, 1], linestyle='--', lw=2, color='tab:grey',
+            label='Chance', alpha=.8)
+    
+        mean_tpr = np.mean(tprs, axis=0)
+        mean_tpr[-1] = 1.0
+        mean_auc = auc(mean_fpr, mean_tpr)
+        std_auc = np.std(aucs)
+        ax.plot(mean_fpr, mean_tpr, color='tab:orange',
+                label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),
+                lw=2, alpha=.8)
+        
+        std_tpr = np.std(tprs, axis=0)
+        tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
+        tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
+        ax.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2,
+                        label=r'$\pm$ 1 std. dev.')
+        
+        ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05],
+               title=title)
+        ax.legend(loc="lower right")
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+        ax.grid(True, axis='y', alpha=0.3)
+        
+        if j==1:
+            ax.set_ylabel('')
+        
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results2\\ROC Curves\\roc_curves.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+
+def cross_validation_4(classifier_type, df_train, sensors_init_aux, selection_type, n_features, optimal_threshold):
+    
+    df_results = pd.DataFrame()
+    df_general_results = pd.DataFrame()
+    
+    X = df_train.iloc[:,:-1]
+    y = df_train.loc[:,'y']
+    
+    skf = StratifiedKFold(n_splits=5, random_state=1, shuffle=True)
+    for train_index, test_index in skf.split(X, y):
+    
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        
+        df_fold_results = pd.DataFrame()
+        df_fold_results['y'] = y_test.copy()
+        
+        y_train = y_train.replace([2, 3, 4, 5, 6], 1)
+        y_test = y_test.replace([2, 3, 4, 5, 6], 1)
+        
+        df_train_fold = X_train.copy()
+        df_train_fold['y'] = y_train
+
+        X_train, X_test = select_features(X_train, y_train, X_test, sensors_init_aux, selection_type, n_features)        
+        
+        if(optimal_threshold == None):
+            y_pred, y_scores = train_predict(classifier_type, X_train, y_train, X_test, 'both')
+        else:
+            y_scores = train_predict(classifier_type, X_train, y_train, X_test, 'scores')
+            y_pred = (y_scores >= optimal_threshold).astype(bool)
+               
+        cnf_matrix = confusion_matrix(y_test, y_pred, [0,1])
+        TN, FP, FN, TP = get_instances_confusion_matrix(cnf_matrix)
+        df_results = update_results(df_results, TN, FP, FN, TP, 0)
+        
+        df_fold_results['y1'] = y_test
+        df_fold_results['score'] = y_scores
+        df_fold_results['pred'] = y_pred
+        
+        df_general_results = pd.concat([df_general_results, df_fold_results], sort=False)
+        
+        #plot_confusion_matrix(cnf_matrix, [0,1])
+    df_general_results = df_general_results.sort_index()
+    results = round(df_results.describe().loc['mean',:],2).to_dict()
+    #print(round(df_results,2))  
+    #print(results)
+    return results, df_fold_results
 
 def execute_plot_feature_selection_distribution(path_init):
     
@@ -600,12 +768,341 @@ def execute_main_results(path_init):
     sensor_type = "all" # p, f, all
     width = 40
     
+    # Prediciton Parameters
+    classifier_type = "LinearSVC" # GaussianNB LinearSVC NuSVC-poly NuSVC-rbf
+    
     # Feature Selection Parameters
-    selection_type = "None" # mine, chi2, f_classif, mutual_info_classif, None
-    n_features = 99
+    
+    if(classifier_type == "GaussianNB"):
+        selection_type = "mine"
+        n_features = 43
+    elif (classifier_type == "LinearSVC"):
+        selection_type = "f_classif"
+        n_features = 75
+        
+    
+    df = get_dataset(path_init, correlation_type, data_type, width)
+    df_train, df_test = get_df_train_test(df)
+    
+    sensors_init_aux = get_sensors(data_type, sensor_type)
+    combos_str = select_sensors(sensors_init_aux)
+    
+    df_train = df_train.loc[:,combos_str]
+    df_test = df_test.loc[:,combos_str]
+    
+    # Cross validation
+    results, optimal_thresholds = cross_validation_2(classifier_type, df_train, sensors_init_aux, selection_type, n_features)
+    #print(results)
+    
+    for optimal_threshold in optimal_thresholds:
+        print(optimal_threshold)
+        results, _ = cross_validation_4(classifier_type, df_train, sensors_init_aux, selection_type, n_features, optimal_threshold)
+        print(results)
+        
+def execute_final_results(path_init):
+    # Dataset Parameters
+    correlation_type = "DCCA" # DCCA, Pearson
+    data_type = "s" # s, r
+    sensor_type = "all" # p, f, all
+    width = 40
+    
+    classifier_type = "GaussianNB"
+    
+    if (classifier_type == "GaussianNB"):
+        selection_type = "mine"
+        n_features = 43
+        optimal_threshold = -0.8 #0.000264133160643595    
+    elif (classifier_type == "LinearSVC"):
+        selection_type = "f_classif"
+        n_features = 71
+        optimal_threshold = -0.710814509813747
+    
+    
+    df = get_dataset(path_init, correlation_type, data_type, width)
+    
+    #mask = (df['event']<697)|(df['event']>702)
+    #df = df[mask]
+    
+    df_train, df_test = get_df_train_test(df)
+    
+    sensors_init_aux = get_sensors(data_type, sensor_type)
+    combos_str = select_sensors(sensors_init_aux)
+    
+    df_train = df_train.loc[:,combos_str]
+    df_test = df_test.loc[:,combos_str]
+    
+    results, _ = final_test(classifier_type, df_train, df_test, sensors_init_aux, selection_type, n_features, optimal_threshold)       
+    print(results)
+    
+def execute_feature_selection_evolution(path_init):
+    
+    # Dataset Parameters
+    correlation_type = "DCCA" # DCCA, Pearson
+    data_type = "s" # s, r
+    sensor_type = "all" # p, f, all
+    width = 40
+    
+    # Feature Selection Parameters
+    selection_type = "mine" # mine, chi2, f_classif, mutual_info_classif, None
     
     # Prediciton Parameters
-    classifier_type = "NuSVC-rbf" # GaussianNB LinearSVC NuSVC-poly NuSVC-rbf
+    classifier_type = "LinearSVC" # GaussianNB LinearSVC NuSVC-poly NuSVC-rbf
+   
+    results_fs = pd.DataFrame()
+    
+    for n_features in range(17, 100, 2):
+              
+        df = get_dataset(path_init, correlation_type, data_type, width)
+        df_train, df_test = get_df_train_test(df)
+        
+        sensors_init_aux = get_sensors(data_type, sensor_type)
+        combos_str = select_sensors(sensors_init_aux)
+        
+        df_train = df_train.loc[:,combos_str]
+        df_test = df_test.loc[:,combos_str]
+        
+        # Cross validation
+        print(n_features)
+        results, _ = cross_validation_2(classifier_type, df_train, sensors_init_aux, selection_type, n_features)
+        results['x'] = n_features
+        results_fs = results_fs.append(results, ignore_index=True)
+    
+    path_export = path_init + '\\Results\\feature_extraction_evolution_' + classifier_type + '_' + selection_type + '_2.csv'
+    results_fs.to_csv(index=True, path_or_buf=path_export, sep=';', decimal=',')
+
+def execute_plot_feature_selection_evolution(path_init):
+    
+    color1 = 'tab:blue'
+    color2 = 'tab:orange'
+    color3 = 'tab:green'
+    #color4 = 'tab:red'
+    
+    selection_types = ["mine", "f_classif"] # 
+    
+    for classifier_type in ["GaussianNB" ,"LinearSVC","NuSVC-rbf"]: # "GaussianNB" ,"LinearSVC", "NuSVC-rbf"
+        
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9,5), sharey=True, sharex=True)
+        i = 0
+        for ax in axs.flat:
+            selection_type = selection_types[i]
+        
+            path = path_init + '\\Results\\feature_extraction_evolution_' + classifier_type + '_' + selection_type + '.csv'
+            df = pd.read_csv(path, index_col=0, sep=';', decimal=',')
+            df = df[df['x']<100]
+            ax.plot(df['x'], df['precision'], color=color1, label='Precision')
+            #ax.plot(df['x'], df['AUC'], color=color4, label='AUC')
+            ax.plot(df['x'], df['recall'], color=color2, label='Recall')
+            ax.plot(df['x'], df['F1'], color=color3, label = 'F-measure')
+            
+            ax.grid(True, axis='y', alpha=0.3, which='both') 
+            if (classifier_type == 'GaussianNB'):
+                if selection_type == 'mine':
+                    title = 'Our Feature Ranking Method'
+                    x = 43
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x+1, 1.0-0.005,'1.00', ha="left", va="top", color=color1)
+                    ax.text(x+1, 0.84+0.005,'0.84', ha="left", va="bottom", color=color3)
+                    ax.text(x+1, 0.73,'0.73', ha="left", va="bottom", color=color2)
+                    ax.text(x+1, 0.56,str(x), ha="left", va="center", color='k', alpha=0.5)
+                    ax.legend(loc='lower right')
+                elif selection_type == 'chi2':
+                    title = 'Chi-Squared Test'
+                    ax.set_xlabel('Number of Features')
+                    x = 95
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x-1, 0.93+0.005,'0.93', ha="right", va="bottom", color=color1)
+                    ax.text(x-1, 0.81+0.005,'0.81', ha="right", va="bottom", color=color3)
+                    ax.text(x-1, 0.71+0.005,'0.71', ha="right", va="bottom", color=color2)
+                    ax.text(x-1, 0.56,str(x), ha="right", va="center", color='k', alpha=0.5)
+                else:
+                    title = 'SelectKBest w/ ANOVA F-value'
+                    x = 91
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x-1, 1.0-0.005,'1.00', ha="right", va="top", color=color1)
+                    ax.text(x-1, 0.83+0.005,'0.83', ha="right", va="bottom", color=color3)
+                    ax.text(x-1, 0.71+0.005,'0.71', ha="right", va="bottom", color=color2)
+                    ax.text(x-1, 0.56,str(x), ha="right", va="center", color='k', alpha=0.5)
+                   
+            elif (classifier_type == 'LinearSVC'):
+                if selection_type == 'mine':
+                    title = 'Our Feature Ranking Method'
+                    x = 95
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x-1, 1.0+0.005,'1.00', ha="right", va="bottom", color=color1)
+                    ax.text(x-1, 0.97+0.005,'0.97', ha="right", va="bottom", color=color3)
+                    ax.text(x-1, 0.95-0.004,'0.95', ha="right", va="bottom", color=color2)
+                    ax.text(x-1, 0.56,str(x), ha="right", va="center", color='k', alpha=0.5)
+                    ax.legend(loc='lower left')
+                elif selection_type == 'chi2':
+                    title = 'Chi-Squared Test'
+                    ax.set_xlabel('Number of Features')
+                    x = 71
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x-1, 1.0+0.005,'1.00', ha="right", va="bottom", color=color1)
+                    ax.text(x-1, 0.97+0.005,'0.97', ha="right", va="bottom", color=color3)
+                    ax.text(x-1, 0.95-0.005,'0.95', ha="right", va="bottom", color=color2)
+                    ax.text(x-1, 0.56,str(x), ha="right", va="center", color='k', alpha=0.5)
+                else:
+                    title = 'SelectKBest w/ ANOVA F-value'
+                    x = 75
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x-1, 1.0+0.005,'1.00', ha="right", va="bottom", color=color1)
+                    ax.text(x-1, 0.97+0.005,'0.97', ha="right", va="bottom", color=color3)
+                    ax.text(x-1, 0.95-0.005,'0.95', ha="right", va="bottom", color=color2)
+                    ax.text(x-1, 0.56,str(x), ha="right", va="center", color='k', alpha=0.5)
+            else:
+                if selection_type == 'mine':
+                    title = 'Our Feature Ranking Method'
+                    x = 87
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x-1, 1.0-0.005,'1.00', ha="right", va="top", color=color1)
+                    ax.text(x-1, 0.74+0.005,'0.74', ha="right", va="bottom", color=color2)
+                    ax.text(x-1, 0.85+0.005,'0.85', ha="right", va="bottom", color=color3)
+                    ax.text(x-1, 0.56,str(x), ha="right", va="center", color='k', alpha=0.5)
+                    ax.legend(loc='lower left')
+                elif selection_type == 'chi2':
+                    title = 'Chi-Squared Test'
+                    ax.set_xlabel('Number of Features')
+                    x = 73
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x+1, 1.0-0.005,'1.00', ha="left", va="top", color=color1)
+                    ax.text(x+1, 0.85+0.005,'0.85', ha="left", va="bottom", color=color3)
+                    ax.text(x+1, 0.74+0.005,'0.74', ha="left", va="bottom", color=color2)
+                    ax.text(x+1, 0.56,str(x), ha="left", va="center", color='k', alpha=0.5)
+                else:
+                    title = 'SelectKBest w/ ANOVA F-value'
+                    x = 87
+                    ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+                    ax.text(x-1, 1.0-0.005,'1.00', ha="right", va="top", color=color1)
+                    ax.text(x-1, 0.83+0.005,'0.83', ha="right", va="bottom", color=color3)
+                    ax.text(x-1, 0.71+0.005,'0.71', ha="right", va="bottom", color=color2)
+                    ax.text(x-1, 0.56,str(x), ha="right", va="center", color='k', alpha=0.5)
+            
+            ax.set_xlabel('Top k Features')
+            plt.ylim(0.55, 1.03)
+            ax.xaxis.set_minor_locator(ticker.MultipleLocator(5))
+            ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(0.05))
+            ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.025))
+            ax.set_title(title)
+            i+=1
+        
+        fig.tight_layout()
+        plt.savefig(path_init + '\\Images\\Results2\\Feature Selection\\' + classifier_type + '.png', format='png', dpi=300, bbox_inches='tight')
+        plt.show()
+        plt.close()
+
+def execute_time_window_widths(path_init):
+    
+    # Dataset Parameters
+    correlation_type = "DCCA" # DCCA, Pearson
+    data_type = "s" # s, r
+    sensor_type = "all" # p, f, all
+    
+    # Prediciton Parameters
+    classifier_type = "NuSVC-rbf"
+    
+    # Feature Selection Parameters
+    if (classifier_type == "GaussianNB"):
+        selection_type = "mine"
+        n_features = 43
+    elif (classifier_type == "LinearSVC"):
+        selection_type = "f_classif"
+        n_features = 75
+    elif (classifier_type == "NuSVC-rbf"):
+        selection_type = "mine"
+        n_features = 87
+
+    results_fs = pd.DataFrame()
+    
+    for width in range(16, 41, 2):
+              
+        df = get_dataset(path_init, correlation_type, data_type, width)
+        df_train, df_test = get_df_train_test(df)
+        
+        sensors_init_aux = get_sensors(data_type, sensor_type)
+        combos_str = select_sensors(sensors_init_aux)
+        
+        df_train = df_train.loc[:,combos_str]
+        df_test = df_test.loc[:,combos_str]
+        
+        # Cross validation
+        print(width)
+        results, _ = cross_validation_2(classifier_type, df_train, sensors_init_aux, selection_type, n_features)
+        results['x'] = width
+        results_fs = results_fs.append(results, ignore_index=True)
+    
+   
+    path_export = path_init + '\\Results\\time_window_widths_' + classifier_type + '.csv'
+    results_fs.to_csv(index=True, path_or_buf=path_export, sep=';', decimal=',')
+
+def execute_plot_time_window_widths(path_init):
+    
+    color1 = 'tab:blue'
+    color2 = 'tab:orange'
+    color3 = 'tab:green'
+    #color4 = 'tab:red'
+    
+    classifier_types = ["GaussianNB","LinearSVC"]
+    
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9,5), sharey=True, sharex=True)
+        
+    i = 0
+    for ax in axs.flat:
+        
+        classifier_type =  classifier_types[i]
+        
+        path = path_init + '\\Results\\time_window_widths_' + classifier_type + '.csv'
+        df = pd.read_csv(path, index_col=0, sep=';', decimal=',')
+        ax.plot(df['x'], df['precision'], color=color1, marker='o', markersize=3, label='Precision')
+        ax.plot(df['x'], df['recall'], color=color2, marker='o', markersize=3, label='Recall')
+        ax.plot(df['x'], df['F1'], color=color3, marker='o', markersize=3, label = 'F-measure')
+        ax.grid(True, axis='y', alpha=0.3, which='both') 
+        
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.05))
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.025))
+        
+        
+        if (classifier_type=="GaussianNB"):
+            title = "Naive Bayes"
+            x = 40
+            ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+            ax.text(x-0.2, 1.0+0.01,'1.00', ha="right", va="bottom", color=color1)
+            ax.text(x-0.2, 0.84+0.01,'0.84', ha="right", va="bottom", color=color3)
+            ax.text(x-0.2, 0.73+0.01,'0.73', ha="right", va="bottom", color=color2)
+            ax.text(x-0.2, 0.485,str(x), ha="right", va="center", color='k', alpha=0.5)
+        elif (classifier_type=="LinearSVC"):
+            title = "SVM w/ Linear Kernel"
+            x = 40
+            ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+            ax.text(x-0.2, 1.0+0.01,'1.00', ha="right", va="bottom", color=color1)
+            ax.text(x-0.2, 0.97+0.003,'0.97', ha="right", va="bottom", color=color3)
+            ax.text(x-0.2, 0.95-0.02,'0.95', ha="right", va="top", color=color2)
+            ax.text(x-0.2, 0.485,str(x), ha="right", va="center", color='k', alpha=0.5)
+            ax.legend(loc='lower left')
+        else:
+            title = "SVM w/ RBF Kernel"
+            
+        ax.set_xlabel('Time Window Size')    
+        ax.set_title(title)
+        i+=1
+    plt.ylim(0.47, 1.04)
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results2\\Time Window Widths\\time_windows.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+
+def execute_plot_roc_curves_cv(path_init):
+    
+    # Dataset Parameters
+    correlation_type = "DCCA" # DCCA, Pearson
+    data_type = "s" # s, r
+    sensor_type = "all" # p, f, all
+    width = 40
+    
+    # Feature Selection & Classification Parameters
+    params = [["GaussianNB","mine",43], ["LinearSVC","f_classif",75]]
     
     df = get_dataset(path_init, correlation_type, data_type, width)
     df_train, df_test = get_df_train_test(df)
@@ -620,14 +1117,9 @@ def execute_main_results(path_init):
     #print(df_test)
     
     # Cross validation
-    results = cross_validation_2(classifier_type, df_train, sensors_init_aux, selection_type, n_features)
-    print(results)
+    cross_validation_3(df_train, sensors_init_aux, params)
     
-def execute_feature_selection_evolution(path_init):
-    
-    color1 = 'tab:blue'
-    color2 = 'tab:orange'
-    color3 = 'tab:green'
+def execute_thresholds(path_init):
 
     # Dataset Parameters
     correlation_type = "DCCA" # DCCA, Pearson
@@ -635,94 +1127,402 @@ def execute_feature_selection_evolution(path_init):
     sensor_type = "all" # p, f, all
     width = 40
     
-    # Feature Selection Parameters
-    selection_type = "chi2" # mine, chi2, f_classif, mutual_info_classif, None
     
     # Prediciton Parameters
-    classifier_type = "NuSVC-rbf" # GaussianNB LinearSVC NuSVC-poly NuSVC-rbf
-   
-    results_fs = pd.DataFrame()
+    classifier_type = "LinearSVC" #"GaussianNB"
     
+    # Feature Selection Parameters
+    if(classifier_type == "GaussianNB"):
+        selection_type = "mine"
+        n_features = 43
+    elif (classifier_type == "LinearSVC"):
+        selection_type = "f_classif"
+        n_features = 75
     
-    for n_features in range(15, 100, 4):
-              
-        df = get_dataset(path_init, correlation_type, data_type, width)
-        df_train, df_test = get_df_train_test(df)
-        
-        sensors_init_aux = get_sensors(data_type, sensor_type)
-        combos_str = select_sensors(sensors_init_aux)
-        
-        df_train = df_train.loc[:,combos_str]
-        df_test = df_test.loc[:,combos_str]
-        
-        # Cross validation
-        print(n_features)
-        results = cross_validation_2(classifier_type, df_train, sensors_init_aux, selection_type, n_features)
-        results['x'] = n_features
-        results_fs = results_fs.append(results, ignore_index=True)
+    df = get_dataset(path_init, correlation_type, data_type, width)
+    df_train, df_test = get_df_train_test(df)
     
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(11.5,7))
-    ax.plot(results_fs['x'], results_fs['precision'], color=color1, label='Precision')
-    ax.plot(results_fs['x'], results_fs['recall'], color=color2, label='Recall') # marker='o', markersize=4,
-    ax.plot(results_fs['x'], results_fs['AUC'], color=color3, label='AUC')
+    sensors_init_aux = get_sensors(data_type, sensor_type)
+    combos_str = select_sensors(sensors_init_aux)
     
-    ax.grid(True, axis='y', alpha=0.3) 
-    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
-    ax.legend() #loc='lower left'
+    df_train = df_train.loc[:,combos_str]
+    df_test = df_test.loc[:,combos_str]
     
-    fig.tight_layout()
-    plt.show()
-    plt.close()
+    optimal_thresholds = []
+    start = round(-1,2)
+    while start <= 1.05:
+        start = round(start,2)
+        optimal_thresholds.append(start)
+        start += 0.01
     
-    path_export = path_init + '\\Results\\feature_extraction_evolution_' + classifier_type + '_' + selection_type + '.csv'
-    results_fs.to_csv(index=True, path_or_buf=path_export, sep=';', decimal=',')
-
-def execute_plot_feature_selection_evolution(path_init):
+    print(optimal_thresholds)
+    
+    df_results = pd.DataFrame()
+    for optimal_threshold in optimal_thresholds:
+        print(optimal_threshold)
+        results, _ = cross_validation_4(classifier_type, df_train, sensors_init_aux, selection_type, n_features, optimal_threshold)
+        print(results)
+        results['optimal_threshold'] = optimal_threshold
+        df_results = df_results.append(results, ignore_index=True)
+    print(df_results)
+    
+    path_export = path_init + '\\Results\\thresholds_' + classifier_type + '.csv'
+    df_results.to_csv(index=True, path_or_buf=path_export, sep=';', decimal=',')
+    
+def execute_plot_thresholds(path_init):
     
     color1 = 'tab:blue'
     color2 = 'tab:orange'
     color3 = 'tab:green'
     
-    selection_types = ["mine","chi2", "f_classif"] # 
+    classifier_types = ["GaussianNB","LinearSVC"] #"GaussianNB" #LinearSVC
     
-    for classifier_type in ["GaussianNB","LinearSVC"]: # 
+    
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10.5,5), sharex=True, sharey=True)
+    for i, ax in enumerate(axs):
+    
+        classifier_type = classifier_types[i]
         
-        fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(10.5,5), sharey=True, sharex=True)
-        i = 0
-        for ax in axs.flat:
-            selection_type = selection_types[i]
+        path = path_init + '\\Results\\thresholds_' + classifier_type + '.csv'
+        df = pd.read_csv(path, index_col=0, sep=';', decimal=',')
+        #print(df)
         
-            path = path_init + '\\Results\\feature_extraction_evolution_' + classifier_type + '_' + selection_type + '.csv'
-            df = pd.read_csv(path, index_col=0, sep=';', decimal=',')
+        df = df[(df.index<201)]
             
-            df = df[df['x']<100]
-            #print(df)
+        ax.plot(df['optimal_threshold'], df['precision'], color=color1, label='Precision')
+        ax.plot(df['optimal_threshold'], df['recall'], color=color2, label='Recall')
+        ax.plot(df['optimal_threshold'], df['F1'], color=color3, label = 'F-measure')
+        
+        
+        if(classifier_type == "GaussianNB"):
             
-            ax.plot(df['x'], df['precision'], color=color1, label='Precision')
-            ax.plot(df['x'], df['recall'], color=color2, label='Recall') # marker='o', markersize=4,
-            ax.plot(df['x'], df['AUC'], color=color3, label='AUC')
+            x = -0.99
+            ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+            ax.text(x+0.02, 0.94+0.01,'0.94', ha="left", va="bottom", color=color1)
+            ax.text(x+0.02, 0.88+0.01,'0.88', ha="left", va="bottom", color=color3)
+            ax.text(x+0.02, 0.82,'0.82', ha="left", va="center", color=color2)
+            ax.text(x+0.02, 0.37, str(x), ha="left", va="center", color='k', alpha=0.5)
             
-            ax.grid(True, axis='y', alpha=0.3) 
-            plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+            x = -0.67
+            ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+            ax.text(x+0.02, 1.00-0.01,'1.00', ha="left", va="top", color=color1)
+            ax.text(x+0.02, 0.86+0.01,'0.86', ha="left", va="bottom", color=color3)
+            ax.text(x+0.02, 0.75+0.01,'0.75', ha="left", va="bottom", color=color2)
+            ax.text(x+0.02, 0.37, str(x), ha="left", va="center", color='k', alpha=0.5)
             
-            title = "Score Function"
-            if selection_type == 'mine':
-                title += '\nCorrelation Value'
-                ax.legend(loc='lower right')
-            elif selection_type == 'f_classif':
-                title += '\nANOVA F-value'
+            x = 0
+            ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+            ax.text(x+0.02, 1.00-0.01,'1.00', ha="left", va="top", color=color1)
+            ax.text(x+0.02, 0.84+0.01,'0.84', ha="left", va="bottom", color=color3)
+            ax.text(x+0.02, 0.73+0.01,'0.73', ha="left", va="bottom", color=color2)
+            ax.text(x+0.02, 0.37, "0.0", ha="left", va="center", color='k', alpha=0.5)
+        
+            ax.set_title('Naive Bayes')
+            ax.legend(loc='lower right',bbox_to_anchor=(0.92, 0))
+        else:
+            
+            x = -0.70
+            ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+            ax.text(x+0.02, 1.00-0.025,'1.00', ha="left", va="top", color=color1)
+            ax.text(x+0.02, 0.99-0.042,'0.99', ha="left", va="top", color=color3)
+            ax.text(x+0.02, 0.98-0.060,'0.98', ha="left", va="top", color=color2)
+            ax.text(x+0.02, 0.37, str(x), ha="left", va="center", color='k', alpha=0.5)
+            
+            x = -0.53
+            ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+            ax.text(x+0.02, 1.00-0.035,'1.00', ha="left", va="top", color=color1)
+            ax.text(x+0.02, 0.99-0.052,'0.99', ha="left", va="top", color=color3)
+            ax.text(x+0.02, 0.98-0.070,'0.98', ha="left", va="top", color=color2)
+            ax.text(x+0.02, 0.37, str(x), ha="left", va="center", color='k', alpha=0.5)
+            
+            x = 0
+            ax.axvline(x=x, color='k', linestyle='--', linewidth=1.25, alpha=0.3)
+            ax.text(x+0.04, 1.00-0.005,'1.00', ha="left", va="top", color=color1)
+            ax.text(x+0.04, 0.97-0.005,'0.97', ha="left", va="top", color=color3)
+            ax.text(x+0.04, 0.95-0.02,'0.95', ha="left", va="top", color=color2)
+            ax.text(x+0.04, 0.37, "0.0", ha="left", va="center", color='k', alpha=0.5)
+        
+            ax.set_title('SVM w/ Linear Kernel')
+        
+        ax.set_xlabel('Threshold')
+        ax.set_ylim(0.35, 1.03)
+        
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(0.2))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.05))
+        ax.grid(True, axis='y', alpha=0.3, which='both')
+        
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results2\\ROC Curves\\thresholds.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+
+def before_after_threshold(path_init):
+    # Dataset Parameters
+    correlation_type = "DCCA" # DCCA, Pearson
+    data_type = "s" # s, r
+    sensor_type = "all" # p, f, all
+    width = 40
+    
+    # Prediciton Parameters
+    classifier_type = "LinearSVC"
+    
+    if (classifier_type == "GaussianNB"):
+        selection_type = "mine"
+        n_features = 43
+        optimal_threshold = None
+    elif (classifier_type == "LinearSVC"):
+        selection_type = "f_classif"
+        n_features = 75
+        optimal_threshold = None
+    elif (classifier_type == "NuSVC-rbf"):
+        selection_type = "chi2"
+        n_features = 73
+        optimal_threshold = None
+    
+    df = get_dataset(path_init, correlation_type, data_type, width)
+    df_train, df_test = get_df_train_test(df)
+    
+    sensors_init_aux = get_sensors(data_type, sensor_type)
+    combos_str = select_sensors(sensors_init_aux)
+    
+    df_train = df_train.loc[:,combos_str]
+    df_test = df_test.loc[:,combos_str]
+    
+    results, df_results = cross_validation_4(classifier_type, df_train, sensors_init_aux, selection_type, n_features, optimal_threshold)
+    
+    labels = ['0','0.05', '0.1', '0.5', '1.0', '1.5', '2.0']
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(9,5))
+    for i, ax in enumerate(axs):
+        data_to_plot = []
+        positions = []
+        for y in range(0,7,1):
+            data_to_plot.append(df_results[(df_results['y']==y) & (df_results['pred']==i)]['score'])
+            positions.append(y)
+        
+        if (classifier_type == "GaussianNB"):
+            if (i==0):
+                ax.set_ylabel('Difference between the Probability for each Class')
+                ax.yaxis.set_major_locator(ticker.MultipleLocator(0.02))
+                ax.set_title("Instances Classified as Negative")
             else:
-                title += '\nChi-Squared Test'
-                ax.set_xlabel('Number of Features')
-            
-            ax.set_title(title)
-            i+=1
+                ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
+                ax.set_title("Instances Classified as Positive")
+        else:
+            if (i==0):
+                ax.set_ylabel('Distance to the Separating Hyperplane')
+                ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+                ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+                ax.set_title("Instances Classified as Negative")
+            else:
+                ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+                ax.set_title("Instances Classified as Positive")
         
-        plt.ylim(0.53, 1.02)
-        fig.tight_layout()
+        ax.boxplot(data_to_plot, positions=positions, labels=labels, showfliers=False)
+        ax.set_xlabel('Leakage Coefficient')
+        ax.grid(True, axis='y', alpha=0.3, which='both') 
+    
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results2\\ROC Curves\\box_plots_' + classifier_type + '.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    
+def autolabel(rects, ax):
+    """Attach a text label above each bar in *rects*, displaying its height."""
+    for rect in rects:
+        height = rect.get_height()
+        ax.annotate('{:.1f}%'.format(height),
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(9, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    rotation=30,
+                    ha='center', va='bottom', color='k')
+        
+
+def before_after_threshold_2(path_init):
+    
+    color1 = 'tab:blue'
+    color2 = 'tab:orange'
+
+    # Dataset Parameters
+    correlation_type = "DCCA" # DCCA, Pearson
+    data_type = "s" # s, r
+    sensor_type = "all" # p, f, all
+    width = 40
+    
+    # Prediciton Parameters
+    classifiers_type = ["GaussianNB","LinearSVC"]
+    
+    df = get_dataset(path_init, correlation_type, data_type, width)
+    df_train, df_test = get_df_train_test(df)
+    
+    sensors_init_aux = get_sensors(data_type, sensor_type)
+    combos_str = select_sensors(sensors_init_aux)
+    
+    df_train = df_train.loc[:,combos_str]
+    df_test = df_test.loc[:,combos_str]
+    
+    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(11,5), sharey=True)
+    for i, ax in enumerate(axs):
+        
+        classifier_type = classifiers_type[i] 
+        
+        if (classifier_type == "GaussianNB"):
+            selection_type = "mine"
+            n_features = 43
+            optimal_threshold = None
+            optimal_threshold1 = -0.67
+        elif (classifier_type == "LinearSVC"):
+            selection_type = "f_classif"
+            n_features = 75
+            optimal_threshold = None
+            optimal_threshold1 = -0.53
+    
+        results, df_results = cross_validation_4(classifier_type, df_train, sensors_init_aux, selection_type, n_features, optimal_threshold)
+        results1, df_results1 = cross_validation_4(classifier_type, df_train, sensors_init_aux, selection_type, n_features, optimal_threshold1)
+        
+        print(results)
+        print(results1)
+        
+        g1 = []
+        g2 = []
+        positions = []
+        labels = ['0', '0.05', '0.1', '0.5', '1.0', '1.5', '2.0']
+        df_results = df_results.groupby(['y','pred']).count()['y1']
+        df_results1 = df_results1.groupby(['y','pred']).count()['y1']
+        
+        print(df_results)
+        
+        for y in range(0,7,1):
+            positions.append(y)
+            g = df_results[y]
+            if(y==0):
+                if(len(g)==1):
+                    g1.append(0)
+                else:
+                    g1.append((g[1]*100)/(g[0]+g[1]))
+            else:
+                g1.append((g[0]*100)/(g[0]+g[1]))
+                
+        for y in range(0,7,1):
+            g = df_results1[y]
+            if(y==0):
+                if(len(g)==1):
+                    g2.append(0)
+                else:
+                    g2.append((g[1]*100)/(g[0]+g[1]))
+            else:
+                g2.append((g[0]*100)/(g[0]+g[1]))
+            
+        x = np.arange(len(labels))  # the label locations
+        width = 0.40  # the width of the bars
+        
+        if (i==0):
+            label1 = 'Threshold = 0'
+            label2 = 'Threshold = ' + str(optimal_threshold1)
+        else:
+            label1 = 'Threshold = 0'
+            label2 = 'Threshold = ' + str(optimal_threshold1)
+        
+        rects1 = ax.bar(x - width/2, g1, width, label=label1, color=color2)
+        rects2 = ax.bar(x + width/2, g2, width, label=label2, color=color1)
+        
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(10))
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(5))
+        
+        ax.yaxis.set_major_formatter(ticker.PercentFormatter())
+        
+        if (i==0):
+            ax.set_ylabel('Percentage of Instances Incorrecly Classified')
+            ax.set_title('Naive Bayes')
+            ax.set_xlabel('Leakage Coefficient')
+            ax.legend()
+        else:
+            ax.set_title('SVM w/ Linear Kernel')
+            ax.set_xlabel('Leakage Coefficient')
+            ax.legend()
+            
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.grid(True, axis='y', alpha=0.3, which='both')
+        autolabel(rects1, ax)
+        autolabel(rects2, ax)
+    
+    plt.ylim(0, 80)
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results2\\ROC Curves\\bar_chart.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+   
+def execute_leakage_assessment(path_init):
+    # Dataset Parameters
+    correlation_type = "DCCA" # DCCA, Pearson
+    data_type = "s" # s, r
+    sensor_type = "all" # p, f, all
+    width = 40
+    
+    classifier_type = "GaussianNB"
+    
+    if (classifier_type == "GaussianNB"):
+        selection_type = "mine"
+        n_features = 43
+        optimal_threshold = None #-0.9988549240899721 #0.000264133160643595 0.5
+    elif (classifier_type == "LinearSVC"):
+        selection_type = "chi2" #'mutual_info_classif'#"chi2"
+        n_features = 71
+        optimal_threshold = None #-0.710814509813747 0
+    
+    df = get_dataset(path_init, correlation_type, data_type, width)
+    
+    #mask = (df['event']<697)|(df['event']>702)
+    #df = df[mask]
+    
+    df_train, df_test = get_df_train_test(df)
+    
+    sensors_init_aux = get_sensors(data_type, sensor_type)
+    combos_str = select_sensors(sensors_init_aux)
+    
+    df_train = df_train.loc[:,combos_str]
+    df_test = df_test.loc[:,combos_str]
+    
+    path = path_init + '\\Data\\infraquinta\\events\\Organized_Data_4\\dataset_756_' + correlation_type.lower() +'_' + str(width) + '.csv'
+    df_test = pd.read_csv(path, index_col=0)
+    df_test = df_test[df_test['y']!=0].iloc[:24,:]
+    df_test = df_test.loc[:,combos_str]
+    #df_test = df_test.iloc[81:,:]
+    #print(df_train)
+    print(df_test)
+    
+    
+    results, y_scores = final_test(classifier_type, df_train, df_test, sensors_init_aux, selection_type, n_features, optimal_threshold)       
+    print(results)
+    print(y_scores)
+    
+    
+    df_test['score'] = y_scores
+    
+    x = range(1, len(df_test)+1)
+    
+    fig, ax = plt.subplots()
+    ax.plot(x, df_test['score'])
+    plt.show()
+    plt.close()
+    
+    
+    """
+    for y in range(0,7,1):
+    
+        data = df_test[df_test['y']==y]['score'].to_numpy()
+        
+        #print(df_test)
+        fig, ax = plt.subplots()
+        #ax.set_title('Notched boxes')
+        ax.boxplot(data, showfliers=True)
+        #ax.hist(data, bins='auto')
         plt.show()
         plt.close()
-
+    """ 
     
 config = Configuration()
 path_init = config.path
@@ -730,13 +1530,28 @@ path_init = config.path
 #execute_plot_feature_selection_distribution(path_init)
 #execute_plot_feature_selection_top(path_init)
 
-execute_feature_selection_evolution(path_init)
+#execute_feature_selection_evolution(path_init)
 #execute_plot_feature_selection_evolution(path_init) 
-    
+  
+#execute_time_window_widths(path_init)
+#execute_plot_time_window_widths(path_init)
+
+#execute_plot_roc_curves_cv(path_init)  
+  
+#execute_thresholds(path_init)
+execute_plot_thresholds(path_init)
+
+
+#before_after_threshold(path_init) # Boxplots
+#before_after_threshold_2(path_init) # Barchart
+
+
 #execute_main_results(path_init)
+#execute_final_results(path_init)
+
+#execute_leakage_assessment(path_init)
     
-    
-    
+
     
     
 

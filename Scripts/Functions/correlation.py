@@ -45,7 +45,7 @@ def sliding_window(xx,k):
 
 """
     The Pearson correlation does not support time series that don't change
-    its change in time (straight line). Therefore, 999999999 is returned instead.
+    in time (straight line). Therefore, 999999999 is returned instead.
     
     Note: When this value is passed to the website, it will be interpreted as NULL
 """

@@ -83,11 +83,24 @@ def get_data_with_event_3(df, event_info, width, point):
     init_point = point
     final_point = init_point + width
     df1 = df.iloc[int(init_point):int(final_point),:]
-    #print(str(init_point) + " | " + str(final_point) + " (" + str(len(df1)) + ")")
     
-    if (((final_point-1) >= (event_info.time_init/600)) & ((final_point-1) <= (event_info.time_final/600))):
+    #print((init_point < (event_info.time_init/600)))
+    #print((init_point > (event_info.time_final/600)))
+    #print((final_point < (event_info.time_init/600)))
+    #print((final_point > (event_info.time_final/600)))
+       
+    final_point -= 1
+    if (((event_info.time_init/600) >= init_point) and ((event_info.time_init/600) <= final_point)):
+        #print(str(init_point) + " | " + str(final_point) + " (" + str(len(df1)) + ") 1")
+        #print(str(event_info.time_init/600) + " | " + str(event_info.time_final/600))
+        return df1, transform_y(event_info.c)
+    elif (((event_info.time_final/600) >= init_point) and ((event_info.time_final/600) <= final_point)):
+        #print(str(init_point) + " | " + str(final_point) + " (" + str(len(df1)) + ") 1")
+        #print(str(event_info.time_init/600) + " | " + str(event_info.time_final/600))
         return df1, transform_y(event_info.c)
     else:
+        #print(str(init_point) + " | " + str(final_point) + " (" + str(len(df1)) + ") 0")
+        #print(str(event_info.time_init/600) + " | " + str(event_info.time_final/600))
         return df1, 0
     
 
@@ -218,10 +231,10 @@ config = Configuration()
 path_init = config.path
 data_type = "all"
 ea = EventArchive(path_init, data_type)
-correlation_types = ["dcca"] #dcca pearson
+correlation_types = ["pearson"] #dcca pearson
 
-event_range_min = 702 #1 697
-event_range_max = 702 #18696 702 
+event_range_min = 702 #1 697 751
+event_range_max = 702 #18696 702 756 
 
 sensors = []
 if(data_type == "p"):
@@ -296,13 +309,14 @@ for correlation_type in correlation_types:
         df_diff.to_csv(index=True, path_or_buf=path_export)
 """
 
-# All (Correlation Only)
 """
+# All (Correlation Only)
+
 for correlation_type in correlation_types:
 
-    for width in range(34, 40, 4):
+    for width in range(40, 41, 1):
         
-        for dcca_k in range(2, 3, 1):
+        for dcca_k in range(2, 41, 1):
             
             df_diff = {}
             for combo in combos:
@@ -322,11 +336,11 @@ for correlation_type in correlation_types:
                 print(2*'\x1b[2K\r' + "Progress " + str(event_id) + "/" + str(event_range_max), flush=True, end="\r")
                     
             df_diff = pd.DataFrame(df_diff)
-            print(df_diff)
-            path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data_3\\dataset_' + correlation_type + '_' + str(width) + '.csv'
+            print(df_diff.diff().loc[:,['1-4','22-25','1-25']])
+            path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data_3\\dataset_' + correlation_type + '_' + str(width) + '_' + str(dcca_k) + '.csv'
             df_diff.to_csv(index=True, path_or_buf=path_export)
-"""
 
+"""
 
 
 for correlation_type in correlation_types:
@@ -335,13 +349,12 @@ for correlation_type in correlation_types:
         
         for dcca_k in range(2, 3, 1):
             
-            df_diff = {}
-            for combo in combos:
-                df_diff[get_combo_name(combo)] = []
-            df_diff['y'] = []
-            df_diff['event'] = []
-                
             for event_id in range(event_range_min, event_range_max+1):
+                df_diff = {}
+                for combo in combos:
+                    df_diff[get_combo_name(combo)] = []
+                df_diff['y'] = []
+                df_diff['event'] = []
                 
                 for point in range(0,106,1):
                 
@@ -349,10 +362,10 @@ for correlation_type in correlation_types:
                     df_diff = update_df_diff_4(ea.get_event_info(event_id), event_id, df1, df_diff, combos, correlation_type, y, dcca_k)
                     print(2*'\x1b[2K\r' + "Progress " + str(event_id) + "/" + str(event_range_max), flush=True, end="\r")
                     
-            df_diff = pd.DataFrame(df_diff)
-            print(df_diff)
-            path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data_4\\dataset_' + correlation_type + '_' + str(width) + '.csv'
-            df_diff.to_csv(index=True, path_or_buf=path_export)
+                df_diff = pd.DataFrame(df_diff)
+                print(df_diff)
+                path_export = path_init + '\\Data\\infraquinta\\events\\Organized_Data_4\\dataset_'+ str(event_id) + '_' + correlation_type + '_' + str(width) + '.csv'
+                df_diff.to_csv(index=True, path_or_buf=path_export)
 
 
 

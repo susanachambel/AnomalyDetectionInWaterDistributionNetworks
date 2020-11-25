@@ -294,7 +294,7 @@ def window_sizes(path_init):
     
     row_names = []
     for width in range(16,41,2):
-        row_names.append(str(width))
+        row_names.append(width)
     
     ha_1 = [['left','','','','center','','','','center','','','','right'],
             ['left','','','','center','','','','center','','','','right']]
@@ -318,9 +318,9 @@ def window_sizes(path_init):
     for ax in axs.flat:
             
         if i == 0:
-            ax.set_ylabel('DCCA')
+            ax.set_ylabel('DCCA (n=1)')
         if i == 1:
-            ax.set_xlabel('Time Window Width')
+            ax.set_xlabel('Time Window Size')
         
         title = titles[i]
         ha_i = ha_all[i]
@@ -331,9 +331,9 @@ def window_sizes(path_init):
         y2 = dic[title]['10']
                             
         ax.plot(x, y1, color=color1, marker='s', markersize=4, label='w/o leakage')
-        ax.plot(x, y2, color=color2, marker='o', markersize=4, label='w/ leakage')
+        ax.plot(x, y2, color=color2, marker='o', markersize=4, label='w/ leakage (coef=2.0)')
         
-        ax.grid(True, axis='y', alpha=0.3)
+        ax.grid(True, axis='y', alpha=0.3, which='both')
         
         j=0
         for x,y1,y2,ha1,ha2,xytext1,xytext2 in zip(x,y1,y2,ha_i[0],ha_i[1],xytext_i[0],xytext_i[1]):
@@ -367,7 +367,10 @@ def window_sizes(path_init):
             title += '\n(one sensor of each type)'
             
         ax.set_title(title)   
-        
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(4))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(2))
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
         i += 1
      
     plt.ylim(-1,1)

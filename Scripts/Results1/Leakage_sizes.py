@@ -292,7 +292,7 @@ def leakage_sizes(path_init):
         for ax in axs.flat:
             
             if i == 0:
-                ax.set_ylabel('DCCA')
+                ax.set_ylabel('DCCA (n=1)')
                 
             if i == 1:
                 ax.set_xlabel('Leakage Coefficient')
@@ -324,7 +324,7 @@ def leakage_sizes(path_init):
             
             min_xlim, max_xlim = ax.get_xlim()
             
-            ax.grid(True, axis='y', alpha=0.3)
+            ax.grid(True, axis='y', alpha=0.3, which='both')
             
             row_name_split = row_name.split('-')
             title = 'Sensors ' + row_name_split[0] + ' & ' + row_name_split[1]
@@ -339,10 +339,10 @@ def leakage_sizes(path_init):
                 ax.text(max_xlim-0.1, df_column[event_id_init]*0.92,'w/o leakage = {:.2f}'.format(df_column[event_id_init]), ha="right", va="center", color=color1)
                 title += '\n(one sensor of each type)'
             
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+            ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
             ax.set_title(title) 
             i += 1
-            
-            
         
         plt.ylim(-1,1)
         

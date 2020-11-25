@@ -263,13 +263,15 @@ def dcca_k(path_init):
     width = 40
     correlation_type = 'dcca'
     data_type = 'all'
+    color1 = 'tab:blue'
+    color2 = 'tab:orange'
     
     row_names = ['1-4', '22-25', '1-25']
     dic = {}
     for row_name in row_names:
         dic[row_name] = {'1':[],'10':[]}
     
-    for dcca_k in range(2,11,1):
+    for dcca_k in range(2,41,2):
     
         df, columns = get_df(path_init, width, correlation_type, dcca_k)
         
@@ -283,23 +285,24 @@ def dcca_k(path_init):
     titles = row_names
     
     row_names = []
-    for dcca_k in range(2,11,1):
-        row_names.append(str(dcca_k))
+    for dcca_k in range(2,41,2):
+        row_names.append(dcca_k-1)
     
-    ha_1 = [['left','','center','','center','','center','','right'],
-            ['left','','center','','center','','center','','right']]
-    ha_2 = [['left','','center','','center','','center','','right'],
-            ['left','','center','','center','','center','','right']]
-    ha_3 = [['left','','center','','center','','center','','right'],
-            ['left','','center','','center','','center','','right']]
+    
+    ha_1 = [['left','','','','','','center','','','','','','center','','','','','','center','','','','','','center'],
+            ['left','','','','','','center','','','','','','center','','','','','','center','','','','','','center']]
+    ha_2 = [['left','','','','','','center','','','','','','center','','','','','','center','','','','','','center'],
+            ['left','','','','','','center','','','','','','center','','','','','','center','','','','','','center']]
+    ha_3 = [['left','','','','','','center','','','','','','center','','','','','','center','','','','','','center'],
+            ['left','','','','','','center','','','','','','center','','','','','','center','','','','','','center']]
     ha_all = [ha_1,ha_2,ha_3] 
     
-    xytext_1 = [[12,0,12,0,12,0,12,0,12],
-                [-18,0,-18,0,-18,0,-18,0,-18]]
-    xytext_2 = [[12,0,-18,0,-18,0,-18,0,12],
-                [-18,0,12,0,12,0,12,0,-18]]
-    xytext_3 = [[-18,0,12,0,12,0,-18,0,-18],
-                [12,0,-18,0,-18,0,12,0,12]]
+    xytext_1 = [[12,0,0,0,0,0,-18,0,0,0,0,0,-18,0,0,0,0,0,-18,0,0,0,0,0,-18],
+                [-18,0,0,0,0,0,-18,0,0,0,0,0,-18,0,0,0,0,0,-18,0,0,0,0,0,-18]]
+    xytext_2 = [[12,0,0,0,0,0,12,0,0,0,0,0,-18,0,0,0,0,0,-18,0,0,0,0,0,-18],
+                [-18,0,0,0,0,0,-18,0,0,0,0,0,-18,0,0,0,0,0,-18,0,0,0,0,0,12]]
+    xytext_3 = [[-18,0,0,0,0,0,12,0,0,0,0,0,12,0,0,0,0,0,12,0,0,0,0,0,12],
+                [12,0,0,0,0,0,12,0,0,0,0,0,12,0,0,0,0,0,12,0,0,0,0,0,12]]
     xytext_all = [xytext_1,xytext_2,xytext_3]
     
         
@@ -310,7 +313,7 @@ def dcca_k(path_init):
         if i == 0:
             ax.set_ylabel('DCCA')
         if i == 1:
-            ax.set_xlabel('k')
+            ax.set_xlabel('n')
         
         title = titles[i]
         ha_i = ha_all[i]
@@ -320,17 +323,18 @@ def dcca_k(path_init):
         y1 = dic[title]['1']
         y2 = dic[title]['10']
                 
-        ax.plot(x, y1, color='tab:blue', marker='s', markersize=4, label='w/o leakage')
-        ax.plot(x, y2, color='tab:orange', marker='o', markersize=4, label='w/ leakage')
+        ax.plot(x, y1, color='tab:blue', marker='s', markersize=3, label='w/o leakage')
+        ax.plot(x, y2, color='tab:orange', marker='o', markersize=3, label='w/ leakage (coef=2.0)')
+        
             
         title_split = title.split('-')
         
-        ax.grid(True, axis='y', alpha=0.3)
+        ax.grid(True, axis='y', alpha=0.3, which='both')
         
         j=0
         for x,y1,y2,ha1,ha2,xytext1,xytext2 in zip(x,y1,y2,ha_i[0],ha_i[1],xytext_i[0],xytext_i[1]):
 
-            if j%4 == 0:
+            if j%6 == 0:
                 label = "{:.2f}".format(y1)
                 ax.annotate(label, # this is the text
                             (x,y1), # this is the point to label
@@ -358,7 +362,12 @@ def dcca_k(path_init):
         else:
             title += '\n(one sensor of each type)'
             
-        ax.set_title(title)   
+        ax.set_title(title)
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(4))
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(2))
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+        #plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
             
         i += 1
         

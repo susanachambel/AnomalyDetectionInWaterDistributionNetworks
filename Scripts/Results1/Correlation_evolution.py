@@ -251,7 +251,10 @@ def correlation_evolution_s(path_init):
     
     row_names = ['1-4', '22-25', '1-25']
     
-    df, columns = get_df(path_init, data_type, width, correlation_type)    
+    df, columns = get_df(path_init, data_type, width, correlation_type)
+    df1, columns1 = get_df(path_init, data_type, width, 'pearson') 
+    
+    print(df[df['y']>0])
         
     event_id_init = 0
     event_id_final = 105
@@ -260,46 +263,52 @@ def correlation_evolution_s(path_init):
     titles = row_names
     
     x = []
+    x1 = []
     for event_id in events_id:
         x.append(event_id*600)
+        x1.append(event_id*600)
     
-    fig, axs = plt.subplots(3, 1, figsize=(11.4, 6.8),sharey=True, sharex=True)
+    fig, axs = plt.subplots(3, 1, figsize=(11.4, 6.4),sharey=True, sharex=True)
     
     i=0
     for ax in axs.flat:
         
         title = titles[i]
         y = df[title].to_numpy()
+        y1 = df1[title].to_numpy()
 
-        ax.plot(x, y,color='tab:blue')
+        ax.plot(x, y,color='tab:blue', label='DCCA (n=1)')
+        ax.plot(x1, y1,color='tab:orange', label='PCC')
             
         
-        ax.grid(True, axis='y', alpha=0.3)
+        ax.grid(True, axis='y', alpha=0.3,which='both')
         
         ax.xaxis.set_major_locator(ticker.MultipleLocator(8*600))
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(4*600))
         
-        ax.axvspan(48600, 63000, color='tab:red', alpha=0.1, label="Leakage")
+        ax.axvspan(48600, 63000, color='tab:red', alpha=0.1, label="Positive Instances (coef=2.0)")
         
-        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+        #plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
         
         title_split = title.split('-')
         title = 'Sensors ' + title_split[0] + ' & ' + title_split[1]        
         if i == 1:
-            ax.set_ylabel('DCCA')
+            ax.set_ylabel('Correlation')
             title += ' (two flowrate sensors)'
+            ax.legend(ncol=3)
         elif i == 2:
             ax.set_xlabel('Time Point')
-            ax.legend()
             title += ' (one sensor of each type)'
         else:
             title += ' (two pressure sensors)'
+        
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.25))
         ax.set_title(title) 
         i+=1
        
     plt.ylim(-1,1)
     fig.tight_layout()
-    plt.savefig(path_init + '\\Images\\Results1\\Correlation Evolution\\correlation_evolution_lc.png', format='png', dpi=300, bbox_inches='tight')
+    #plt.savefig(path_init + '\\Images\\Results1\\Correlation Evolution\\correlation_evolution_lc.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close(fig=fig)
         
@@ -308,8 +317,9 @@ def correlation_evolution_s(path_init):
 config = Configuration()
 path_init = config.path
 
-#correlation_evolution_s(path_init)
+correlation_evolution_s(path_init)
 
+"""
 color1 = 'tab:blue'
 color2 = 'tab:red'
 
@@ -375,7 +385,7 @@ fig.tight_layout()
 plt.show()
 plt.close(fig=fig)
 
-
+"""
 
 
 

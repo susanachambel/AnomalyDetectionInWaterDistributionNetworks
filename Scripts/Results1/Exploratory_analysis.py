@@ -24,16 +24,16 @@ from statsmodels.tsa.seasonal import seasonal_decompose, STL
 
 def plot_real_week(path_init):
     color = 'LIGHTSLATEGRAY'
-    locator = mdates.HourLocator(interval=24)
+    locator = mdates.HourLocator(interval=1)
     formatter = mdates.ConciseDateFormatter(locator)
-    locator_min = mdates.HourLocator(interval=12)
-    sensors_id = [3,14]
+    locator_min = mdates.MinuteLocator(interval=30)
+    sensors_id = [3,6]
     fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(11.4,4.8), sharex=True)
     i=0
     for ax in axs.flat:
         sensor_id = sensors_id[i]
-        df = select_data(path_init, "infraquinta", "interpolated", sensor_id, '2017-05-15 00:00:00', '2017-05-28 23:59:59')
-        df = df.resample('1h').mean()
+        df = select_data(path_init, "infraquinta", "interpolated", sensor_id, '2017-05-15 00:00:00', '2017-05-15 23:59:59')
+        df = df.resample('5min').mean()
         ax.plot(df.index,df['value'], color=color)
         ax.xaxis.set_major_formatter(formatter)
         ax.grid(True, axis='y', alpha=0.3)
@@ -43,9 +43,12 @@ def plot_real_week(path_init):
         title = "Sensor " + str(sensor_id)    
         if i == 1:
             ylabel = "Volumetric Flowrate [m3/h]"
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(25))
         else:
             ylabel = "Pressure [bar]"
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(0.5))
         ax.set(xlabel='', ylabel=ylabel, title=title)
+        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
         i+=1
     plt.xlabel("Time")
     fig.tight_layout()
@@ -90,7 +93,7 @@ def plot_real_day(path_init):
 def plot_synthetic(path_init):
     color1 = 'LIGHTSLATEGRAY'
     color2 = 'tab:red'
-    event_id = 697 #192 #216
+    event_id =  697 #192 #216 697
     data_type = 'all'
     ea = EventArchive(path_init, data_type)
     sensors_id = ['4','25'] #['9','23']
@@ -109,15 +112,17 @@ def plot_synthetic(path_init):
         plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
         if i == 1:
             ylabel = "Volumetric Flowrate [m3/h]"
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(25))
             #ax.legend(loc="upper left")
         else:
             ylabel = "Pressure [bar]"
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
         title = "Sensor " + str(sensor_id)    
         ax.set(xlabel='', ylabel=ylabel, title=title)
         i+=1
     plt.xlabel("Time Point")
     fig.tight_layout()
-    plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\synthetic_' + str(event_id) + '.png', format='png', dpi=300, bbox_inches='tight')
+    #plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\synthetic_' + str(event_id) + '.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close()
 
@@ -149,7 +154,7 @@ def plot_windows(path_init):
         if i==0:
             init_point = ((time_init/600) - width_aux + 1)*600
             final_point = ((time_init/600) + width_aux)*600
-            ax.axvline(x=time_init, color=color2, linestyle='--', linewidth=1.25, label="Start of leakage")
+            ax.axvline(x=time_init, color=color2, linestyle='--', linewidth=1.25, label="Beginning of leakage")
             ax.set_ylabel("Volumetric Flowrate [m3/h]")
         else:
             init_point = ((time_final/600) - width_aux + 1)*600
@@ -182,7 +187,7 @@ def plot_windows(path_init):
             final_point = (time_init/600)
             init_point = (final_point - width_aux*2)*600
             final_point = (final_point - 1)*600
-            ax.axvline(x=time_init, color=color2, linestyle='--', linewidth=1.25, label="Start of leakage")
+            ax.axvline(x=time_init, color=color2, linestyle='--', linewidth=1.25, label="Beginning of leakage")
             ax.set_ylabel("Volumetric Flowrate [m3/h]")
         else:
             init_point = (time_final/600) + 1
@@ -249,16 +254,19 @@ def synthetic_stats(path_init):
     event_id = 697
     data_type = 'all'
     ea = EventArchive(path_init, data_type)
-    sensors_id = ['4','25'] #['9','23']
-    event_info = ea.get_event_info(event_id)
+    #sensors_id = ['4','25'] #['9','23']
+    #event_info = ea.get_event_info(event_id)
     df = ea.get_event(event_id)
     
-    sensors_id = []
-    for sensor_id in range(1,28,1):
-        sensors_id.append(str(sensor_id))
-        
+    #sensors_id = []
+    #for sensor_id in range(1,28,1):
+    
+    #    sensors_id.append(str(sensor_id))
+      
+    df[df < 0.001] = 0
+    
     print(df.describe())
-    path_export = path_init + '\\Images\\Results1\\Exploratory Analysis\\synthetic_stats.csv'
+    path_export = path_init + '\\Images\\Results1\\Exploratory Analysis\\synthetic_stats_2.csv'
     df.describe().to_csv(index=True, path_or_buf=path_export, sep=';',decimal=',')
     
 def real_stats(path_init):
@@ -293,19 +301,19 @@ def real_stats(path_init):
 def decomposition_week(path_init):
     
     color = 'LIGHTSLATEGRAY'
-    sensor_id = 14
+    sensor_id = 6
     df = select_data(path_init, "infraquinta", "interpolated", sensor_id, '2017-05-15 00:00:00', '2017-05-28 23:59:59')
         
     #df = df.asfreq('h')
     
-    for model in ['additive', 'multiplicative', 'stl']:
+    for model in ['additive']: #'multiplicative', 'stl'
         
         if model == 'stl':
             stl = STL(df, seasonal=60*24+1, period=60*24)
             res = stl.fit()
         else:
             res = seasonal_decompose(df, model=model, period=60*24) # additive multiplicative
-        
+            #res = seasonal_decompose(df, model=model, period=60)
         #result.plot()
         residual = res.resid
         seasonal = res.seasonal 
@@ -331,6 +339,11 @@ def decomposition_week(path_init):
         axs[2].plot(seasonal.resample(resample).mean(), color=color)
         axs[3].plot(residual.resample(resample).mean(), color=color)
         
+        axs[0].yaxis.set_major_locator(ticker.MultipleLocator(25))
+        axs[1].yaxis.set_major_locator(ticker.MultipleLocator(10))
+        axs[2].yaxis.set_major_locator(ticker.MultipleLocator(20))
+        axs[3].yaxis.set_major_locator(ticker.MultipleLocator(20))
+        
         axs[0].set_ylabel('Observed')
         axs[1].set_ylabel('Trend')
         axs[2].set_ylabel('Seasonal')
@@ -346,7 +359,7 @@ def decomposition_week(path_init):
             #plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
         
         fig.tight_layout()
-        plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\decomposition_' + model + '.png', format='png', dpi=300, bbox_inches='tight')
+        #plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\decomposition_' + model + '.png', format='png', dpi=300, bbox_inches='tight')
         plt.show()
         plt.close()
 
@@ -356,10 +369,10 @@ path_init = config.path
 
 #plot_real_week(path_init)
 #plot_real_day(path_init)
-#plot_synthetic(path_init)
+plot_synthetic(path_init)
 #plot_windows(path_init) 
     
 #real_stats(path_init) 
 #synthetic_stats(path_init)
 
-decomposition_week(path_init)
+#decomposition_week(path_init)
