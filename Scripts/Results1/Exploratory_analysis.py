@@ -24,7 +24,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose, STL
 
 def plot_real_week(path_init):
     color = 'LIGHTSLATEGRAY'
-    locator = mdates.HourLocator(interval=1)
+    locator = mdates.HourLocator(interval=2)
     formatter = mdates.ConciseDateFormatter(locator)
     locator_min = mdates.MinuteLocator(interval=30)
     sensors_id = [3,6]
@@ -36,21 +36,25 @@ def plot_real_week(path_init):
         df = df.resample('5min').mean()
         ax.plot(df.index,df['value'], color=color)
         ax.xaxis.set_major_formatter(formatter)
-        ax.grid(True, axis='y', alpha=0.3)
+        ax.grid(True, axis='y', alpha=0.3, which="both")
         ax.xaxis.set_major_locator(locator)
         ax.xaxis.set_major_formatter(formatter)
         ax.xaxis.set_minor_locator(locator_min)
         title = "Sensor " + str(sensor_id)    
         if i == 1:
-            ylabel = "Volumetric Flowrate [m3/h]"
-            ax.yaxis.set_major_locator(ticker.MultipleLocator(25))
+            ylabel = "Volumetric\nFlowrate [m3/h]"
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(30))
+            ax.yaxis.set_minor_locator(ticker.MultipleLocator(15))
         else:
             ylabel = "Pressure [bar]"
             ax.yaxis.set_major_locator(ticker.MultipleLocator(0.5))
-        ax.set(xlabel='', ylabel=ylabel, title=title)
-        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+            ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.25))
+            
+        ax.set_label('')
+        ax.set_ylabel(ylabel, fontsize="14")
+        #plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
         i+=1
-    plt.xlabel("Time")
+    plt.xlabel("Time", fontsize="14")
     fig.tight_layout()
     plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\real_week.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
@@ -81,14 +85,69 @@ def plot_real_day(path_init):
             else:
                 title = "Pressure [bar]"
             
-            ax.set(xlabel='', ylabel=title)
+            ax.set_title(title)
+            ax.set_xlabel('')
         
         plt.xlabel("Time")
         #fig.text(0.001, 0.50, title, va='center', ha='center', rotation='vertical')
         fig.tight_layout()
-        plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\real_day_' + str(sensor_id) + '.png', format='png', dpi=300, bbox_inches='tight')
+        #plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\real_day_' + str(sensor_id) + '.png', format='png', dpi=300, bbox_inches='tight')
         plt.show()
         plt.close()
+
+def plot_real_day_ea(path_init):    
+    color = 'LIGHTSLATEGRAY'
+    date = ['2017-05-15 00:00:00','2017-05-15 23:59:59']
+    locator = mdates.HourLocator(interval=2)
+    locator_minor = mdates.HourLocator(interval=1)
+    formatter = mdates.ConciseDateFormatter(locator)
+    for sensor_id in [14]:
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 2.8))
+        df = select_data(path_init, "infraquinta", "interpolated", sensor_id, date[0], date[1])
+        df = df.resample('5min').mean()
+        ax.plot(df.index,df['value'], color=color)
+        ax.xaxis.set_major_formatter(formatter)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_minor_locator(locator_minor)
+        ax.grid(True, axis='y', alpha=0.3)
+        
+        ax.set_ylabel("Volumetric\nFlowrate [m3/h]", fontsize="14")
+        
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(10))
+        ax.grid(True, axis='y', alpha=0.3, which='both')
+        
+        ax.set_xlabel("Time", fontsize="14")
+        #fig.text(0.001, 0.50, title, va='center', ha='center', rotation='vertical')
+        fig.tight_layout()
+        plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\real_day_' + str(sensor_id) + '_ea.png', format='png', dpi=300, bbox_inches='tight')
+        plt.show()
+        plt.close()
+ 
+def plot_synthetic_ea(path_init):
+    color1 = 'LIGHTSLATEGRAY'
+    event_id =  697 #192 #216 697
+    data_type = 'all'
+    ea = EventArchive(path_init, data_type)
+    sensor_id = '25'
+    event_info = ea.get_event_info(event_id)
+    df = ea.get_event(event_id)
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10,2.8))
+    ax.plot(df.index,df.loc[:,sensor_id],color=color1)
+    ax.grid(True, axis='y', alpha=0.3, which='both')
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(12*600))
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(6*600))
+    #plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+    
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(25))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(12.5))
+    ax.set_ylabel("Volumetric\nFlowrate [m3/h]", fontsize="14")
+    ax.set_xlabel("Time Point", fontsize="14")
+
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results1\\Exploratory Analysis\\synthetic_' + str(event_id) + '_ea.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    
     
 def plot_synthetic(path_init):
     color1 = 'LIGHTSLATEGRAY'
@@ -367,9 +426,12 @@ def decomposition_week(path_init):
 config = Configuration()
 path_init = config.path
 
-#plot_real_week(path_init)
+plot_real_week(path_init)
 #plot_real_day(path_init)
-plot_synthetic(path_init)
+#plot_real_day_ea(path_init)
+
+#plot_synthetic(path_init)
+#plot_synthetic_ea(path_init)
 #plot_windows(path_init) 
     
 #real_stats(path_init) 

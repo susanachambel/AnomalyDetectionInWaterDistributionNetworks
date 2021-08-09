@@ -349,11 +349,81 @@ def leakage_sizes(path_init):
         fig.tight_layout()
         plt.savefig(path_init + '\\Images\\Results1\\Leakage Sizes\\leakage_sizes_lc.png', format='png', dpi=300, bbox_inches='tight')
         plt.show()
-        plt.close(fig=fig)           
+        plt.close(fig=fig)   
+
+def leakage_sizes_ea(path_init):
+
+    width = 40
+    correlation_type = 'dcca'
+    data_types = ['all']
+    
+    color1 = 'tab:blue'
+    color2 = 'tab:orange'
+    
+    for data_type in data_types:
+    
+        sensors, n = get_sensors_n(data_type)
+        df, columns = get_df(path_init, data_type, width, correlation_type)
+        
+        event_id_init = 1393
+        event_id_final = event_id_init+9
+        events_id = list(range(event_id_init-1, event_id_final+1, 2))
+        
+        row_name = '1-25'
+        
+        ytexts = [15,-16,12,12,-18,12]
+        has = ['left','left','right','center','center','right']
+        
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5,4))
+            
+        ax.set_ylabel('DCCA (n=1)', fontsize=14)
+        ax.set_xlabel('Leakage Coefficient', fontsize=14)
+    
+        coefficients = ['0.05', '0.1', '0.5', '1.0', '1.5', '2.0']
+        df_column = df[row_name]
+        
+        ax.axhline(y=df_column[event_id_init], color=color1, linestyle='--', linewidth=1.25, label="Without leakage")
+        y = []
+        for event_id in events_id:
+            y.append(df_column[event_id])
+            
+        ax.plot(coefficients, y, color=color2, marker='o', markersize=4)
+        
+        for x,y,ytext,ha in zip(coefficients,y, ytexts, has):
+
+            label = "{:.2f}".format(y)
+        
+            ax.annotate(label, # this is the text
+                         (x,y), # this is the point to label
+                         textcoords="offset points", # how to position the text
+                         xytext=(0,ytext), # distance from text to points (x,y)
+                         ha=ha, bbox=dict(facecolor="w",edgecolor=color2,alpha=0.4,boxstyle="round")
+                         ) # horizontal alignment can be left, right or center
+        
+        min_xlim, max_xlim = ax.get_xlim()
+        
+        ax.grid(True, axis='y', alpha=0.3, which='both')
+        
+        row_name_split = row_name.split('-')
+        
+        ax.text(max_xlim-0.1, df_column[event_id_init]*0.92,'w/o leakage = {:.2f}'.format(df_column[event_id_init]), ha="right", va="center", color=color1, fontsize=14)
+        
+        ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+        #ax.set_title(title) 
+        
+        plt.ylim(-1,0.5)
+        
+        fig.tight_layout()
+        plt.savefig(path_init + '\\Images\\Results1\\Leakage Sizes\\leakage_sizes_lc_ea.png', format='png', dpi=300, bbox_inches='tight')
+        plt.show()
+        plt.close(fig=fig) 
+        
 
 config = Configuration()
 path_init = config.path
 
-leakage_sizes(path_init)
+#leakage_sizes(path_init)
+leakage_sizes_ea(path_init)
 #leakage_sizes_hm(path_init)
 

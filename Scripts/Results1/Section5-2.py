@@ -207,8 +207,8 @@ def heatmap_2(data, row_labels, col_labels, ax=None,
     
     
     if cbarlabel is None:
-        ax.text(-0.12, 0.60, 'Pressure\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center")
-        ax.text(-0.12, 0.10, 'Flowrate\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center")
+        ax.text(-0.12, 0.60, 'Pressure\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center") # fontsize=18
+        ax.text(-0.12, 0.10, 'Flowrate\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center") # fontsize=18
     
     ax.tick_params(top=False, bottom=True,
                        labeltop=False, labelbottom=True)
@@ -287,8 +287,8 @@ def heatmap_3(data, row_labels, col_labels, ax=None,
     
     
     if cbarlabel is None:
-        ax.text(-0.12, 0.62, 'Pressure\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center")
-        ax.text(-0.12, 0.12, 'Flowrate\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center")
+        ax.text(-0.12, 0.62, 'Flowrate\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center")
+        ax.text(-0.12, 0.12, 'Pressure\nSensors', color='k', rotation=90, transform=ax.transAxes, va="center", ha="center")
     
     ax.tick_params(top=False, bottom=True,
                        labeltop=False, labelbottom=True)
@@ -532,11 +532,60 @@ def correlation_methods_smaller(path_init):
             plt.show()
             plt.close(fig=fig)
             
+def correlation_methods_smaller_ea(path_init):
+    
+    correlation_types = ['dcca']
+    width = 40
+    events_id = [1393, 1402]
+    data_types = ['all']
+    
+    for correlation_type in correlation_types:
+    
+        for data_type in data_types:
+            
+            sensors, n = get_sensors_n(data_type)
+            df, columns = get_df(path_init, data_type, width, correlation_type)
+            
+            
+            fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(11.4*1,6.4*1),constrained_layout=True)
+                
+            for i, ax in enumerate(axs.flat):
+                
+                event_id = events_id[i]
+                
+                ax.set_aspect('equal')
+        
+                df_row = df.iloc[event_id,:]
+                correlations = get_correlation_map_simulated(sensors, columns, df_row)
+                        
+                if(correlation_type == 'dcca'):
+                    correlation_type_aux = 'DCCA (n=1)'
+                else:
+                    correlation_type_aux = 'PCC'
+                
+                if(i == 0):
+                    ax.set_title('Negative Instance', pad=11, fontsize=18)
+                    im, cbar = heatmap_2(correlations, sensors, sensors, ax=ax,
+                                   cmap="RdBu", cbarlabel=None) #RdBu
+                else:
+                    ax.set_title('Positive Instance (coef=2.0)', pad=11, fontsize=18)
+                    im, cbar = heatmap_2(correlations, sensors, sensors, ax=ax,
+                                   cmap="RdBu", cbarlabel='') #RdBu
+                
+            cbar = fig.colorbar(im, ax=axs.ravel().tolist(), pad=0.01, shrink=0.7)
+            cbar.ax.set_ylabel(correlation_type_aux, rotation=-90, va="bottom", fontsize=18)
+            cbar.outline.set_visible(False)    
+                
+            #fig.tight_layout()
+            plt.savefig(path_init + '\\Images\\Results1\\Correlation Methods\\' + data_type + '_' + correlation_type + '_' + str(width) + '_' + str(event_id) + '_small_ea.png', format='png', dpi=300, bbox_inches='tight')
+            plt.show()
+            plt.close(fig=fig)
+            
 def correlation_methods_smaller_r(path_init):
     
-    correlation_types = ['dcca','pearson']
-    width = 120 #40
-    events_id = [3507,3488]#[1393, 1402]
+    correlation_types = ['pearson'] #dcca, pearson
+    width = 120
+    events_id = [3507,3484]#[155,132]  #3507,3484
     data_types = ['r']
     
     for correlation_type in correlation_types:
@@ -583,7 +632,7 @@ def correlation_methods_smaller_r(path_init):
             cbar.outline.set_visible(False)    
                 
             #fig.tight_layout()
-            #plt.savefig(path_init + '\\Images\\Results1\\Correlation Methods\\' + data_type + '_' + correlation_type + '_' + str(width) + '_' + str(event_id) + '_small.png', format='png', dpi=300, bbox_inches='tight')
+            plt.savefig(path_init + '\\Images\\Results1\\Correlation Methods\\' + data_type + '_' + correlation_type + '_' + str(width) + '_' + str(event_id) + '_small.png', format='png', dpi=300, bbox_inches='tight')
             plt.show()
             plt.close(fig=fig)        
                 
@@ -623,6 +672,8 @@ path_init = config.path
 
 #window_sizes(path_init)
 #leakage_sizes(path_init)
+#correlation_methods_smaller(path_init)
+#correlation_methods_smaller_ea(path_init)
 correlation_methods_smaller_r(path_init)
 
 #dcca_k(path_init)

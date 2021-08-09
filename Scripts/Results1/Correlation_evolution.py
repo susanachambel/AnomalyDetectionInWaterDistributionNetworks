@@ -254,7 +254,7 @@ def correlation_evolution_s(path_init):
     df, columns = get_df(path_init, data_type, width, correlation_type)
     df1, columns1 = get_df(path_init, data_type, width, 'pearson') 
     
-    print(df[df['y']>0])
+    #print(df[df['y']>0])
         
     event_id_init = 0
     event_id_final = 105
@@ -295,10 +295,11 @@ def correlation_evolution_s(path_init):
         if i == 1:
             ax.set_ylabel('Correlation')
             title += ' (two flowrate sensors)'
-            ax.legend(ncol=3)
+            
         elif i == 2:
-            ax.set_xlabel('Time Point')
+            ax.set_xlabel('            Time Point', labelpad = 8.5)
             title += ' (one sensor of each type)'
+            ax.legend(ncol=3, loc='upper left', bbox_to_anchor=(-0.007, -0.15))
         else:
             title += ' (two pressure sensors)'
         
@@ -308,16 +309,71 @@ def correlation_evolution_s(path_init):
        
     plt.ylim(-1,1)
     fig.tight_layout()
-    #plt.savefig(path_init + '\\Images\\Results1\\Correlation Evolution\\correlation_evolution_lc.png', format='png', dpi=300, bbox_inches='tight')
+    plt.savefig(path_init + '\\Images\\Results1\\Correlation Evolution\\correlation_evolution_lc.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close(fig=fig)
         
-       
+def correlation_evolution_s_ea(path_init):
+
+    width = 40
+    correlation_type = 'dcca'
+    data_type = 'all'
+    
+    row_name = '1-25'
+    
+    df, columns = get_df(path_init, data_type, width, correlation_type)
+    df1, columns1 = get_df(path_init, data_type, width, 'pearson') 
+    
+    #print(df[df['y']>0])
+        
+    event_id_init = 0
+    event_id_final = 105
+    events_id = list(range(event_id_init, event_id_final+1, 1))
+    
+    x = []
+    x1 = []
+    for event_id in events_id:
+        x.append(event_id*600)
+        x1.append(event_id*600)
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 2.8),sharey=True, sharex=True)
+    
+    y = df[row_name].to_numpy()
+    y1 = df1[row_name].to_numpy()
+
+    ax.plot(x, y,color='tab:blue', label='DCCA (n=1)')
+    ax.plot(x1, y1,color='tab:orange', label='PCC')
+        
+    
+    ax.grid(True, axis='y', alpha=0.3,which='both')
+    
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(8*600))
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(4*600))
+    
+    ax.axvspan(48600, 63000, color='tab:red', alpha=0.1, label="Positive Instances (coef=2.0)")
+    
+    #plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+    
+    title_split = row_name.split('-')
+    #title = 'Sensors ' + title_split[0] + ' & ' + title_split[1] + ' (one sensor of each type)'      
+    #ax.set_title(title, fontsize=14)
+    ax.set_ylabel('Correlation', fontsize=14)
+    ax.set_xlabel('Time Point', fontsize=14)
+    ax.legend(ncol=2, loc='upper left', fontsize=14)
+    
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.25))
+     
+    plt.ylim(-1,1)
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results1\\Correlation Evolution\\correlation_evolution_lc_ea.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close(fig=fig)       
 
 config = Configuration()
 path_init = config.path
 
-correlation_evolution_s(path_init)
+#correlation_evolution_s(path_init)
+correlation_evolution_s_ea(path_init)
 
 """
 color1 = 'tab:blue'

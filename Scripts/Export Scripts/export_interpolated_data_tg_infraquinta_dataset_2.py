@@ -191,10 +191,9 @@ def plot_dcca_k(path_init):
             if i == 1:
                 ax.set_ylabel('DCCA')
                 title += ' (two flowrate sensors)'
-                ax.legend(ncol=6)
             elif i == 2:
-                ax.set_xlabel('Time')
                 title += ' (one sensor of each type)'
+                ax.legend(ncol=5, loc='upper left', bbox_to_anchor=(-0.007, -0.15))
             else:
                 title += ' (two pressure sensors)'
             
@@ -209,6 +208,56 @@ def plot_dcca_k(path_init):
     plt.ylim(-1,1)        
     fig.tight_layout()
     plt.savefig(path_init + '\\Images\\Results1\\DCCA K\\r_dcca_k_lc.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    
+def plot_dcca_k_ea(path_init):
+    
+    correlation_type = 'dcca'
+    width = 120  # [60, 120, 180, 240]
+    
+    combo = '6-3'
+    
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10,2.8))
+    
+    for j, dcca_k_aux in enumerate(range(2, 6, 1)):
+        
+        dcca_k = int(width/dcca_k_aux)
+        
+        path = path_init + '\\Data\\infraquinta\\events\\Organized_Data_4\\dataset_r_' + correlation_type + '_' + str(width) + '_' + str(dcca_k) + '.csv'
+        df = pd.read_csv(path, index_col=0)
+        
+        df['init'] = pd.to_datetime(df['init'], format='%Y-%m-%d %H:%M:%S')
+        df['final'] = pd.to_datetime(df['final'], format='%Y-%m-%d %H:%M:%S')
+        df.index = df['init']
+        #del df['init']
+        df = df.sort_index()
+        
+        df = df[(df['init']>=datetime(2017,2,7,0,0,0)) & (df['init']<=datetime(2017,2,7,10,0,0))]
+        
+        ax.plot(df.index,df.loc[:,combo], label='n = ' + str(dcca_k-1))
+        
+        locator = mdates.HourLocator(interval=1)
+        formatter = mdates.ConciseDateFormatter(locator)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
+        
+        #plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+        
+        ax.set_ylabel('DCCA', fontsize=14)
+        ax.set_xlabel('Time', fontsize=14)
+        ax.legend(ncol=3, loc='upper left',fontsize=14)
+        
+        if j == 0:
+            df_aux = df[df['y']==1]
+            ax.axvspan(df_aux.iloc[0,:]['init'], df_aux.iloc[-1,:]['init'], color='tab:red', alpha=0.1, label="Positive Instances")
+        
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.25))
+        ax.grid(True, axis='y', alpha=0.3,which='both')
+    
+    plt.ylim(-1,1)        
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results1\\DCCA K\\r_dcca_k_lc_ea.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close()
     
@@ -270,8 +319,7 @@ def plot_time_windows(path_init):
         ax.grid(True, axis='y', alpha=0.3,which='both')
         
         if i == 3:
-            ax.set_xlabel('Time')
-            ax.legend(loc='lower right')
+            ax.legend(ncol=4, loc='upper left', bbox_to_anchor=(-0.007, -0.15))
 
     
     plt.ylim(-1,1.1)       
@@ -332,12 +380,12 @@ def plot_correlation_evolution(path_init):
         if i == 1:
             ax.set_ylabel('Correlation')
             title += ' (two flowrate sensors)'
-            ax.legend(ncol=3, loc='lower left')
         elif i == 2:
-            ax.set_xlabel('Time')
             title += ' (one sensor of each type)'
+            ax.legend(ncol=3, loc='upper left', bbox_to_anchor=(-0.007, -0.15))
         else:
             title += ' (two pressure sensors)'
+            
         
             
         ax.set_title(title)
@@ -346,7 +394,7 @@ def plot_correlation_evolution(path_init):
     
     plt.ylim(-1,1.1)        
     fig.tight_layout()
-    #plt.savefig(path_init + '\\Images\\Results1\\Correlation Evolution\\r_correlation_evolution_lc.png', format='png', dpi=300, bbox_inches='tight')
+    plt.savefig(path_init + '\\Images\\Results1\\Correlation Evolution\\r_correlation_evolution_lc.png', format='png', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close()
 
@@ -359,7 +407,8 @@ df_sensors = get_df_sensors(path_init)
 #export_dataset(path_init)
 
 #plot_dcca_k(path_init)
-plot_time_windows(path_init)
+plot_dcca_k_ea(path_init)
+#plot_time_windows(path_init)
 #plot_correlation_evolution(path_init)
 
 """

@@ -29,7 +29,7 @@ def process_data_request(request):
     chunks_granularity_frequence = int(request.form['chunks_granularity_frequence'])   
     pairwise_comparisons = request.form['pairwise_comparisons']
     correlations = json.loads(request.form['correlations'])
-    dcca_k = int(request.form['dcca_k'])
+    dcca_k = int(request.form['dcca_k']) + 1
     pca = request.form['pca']
     
     dfs = {}

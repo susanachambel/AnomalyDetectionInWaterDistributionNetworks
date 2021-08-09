@@ -171,7 +171,7 @@ window.onload = function () {
 
     document.getElementById("dcca-parameterization-default").addEventListener("change", function () {
         if (this.checked) {
-            document.getElementById("dcca-parameterization-value").value = 2;
+            document.getElementById("dcca-parameterization-value").value = 1;
             document.getElementById("dcca-parameterization-value").disabled = true;
         } else {
             document.getElementById("dcca-parameterization-value").disabled = false;
@@ -596,7 +596,7 @@ function submit() {
         pairwise_comparisons: document.querySelector('input[name="check-pairwise-comparisons"]:checked').value,
         correlations: JSON.stringify($('#correlation').selectpicker('val')),
         dcca_k: document.getElementById("dcca-parameterization-value").value,
-        pca: document.getElementById("pca").checked
+        pca: "true" //document.getElementById("pca").checked
     };
     
     console.log(data)
@@ -921,6 +921,7 @@ function create_heat_map(type) {
         text: hm_variables.text,
         hovertemplate: hm_variables.hovertemplate,
         colorscale: hm_variables.colorscale,
+        reversescale: true,
         //reversescale: true,
         zmin: hm_variables.zmin,
         zmax: hm_variables.zmax,
@@ -1147,7 +1148,7 @@ function init_form(wme) {
     $('#granularity-chunks').selectpicker('val', '3');
     $('#granularity-chunks').selectpicker('refresh');
     document.getElementById("dcca-parameterization-default").checked = true;
-    document.getElementById("dcca-parameterization-value").value = 2; 
+    document.getElementById("dcca-parameterization-value").value = 1; 
     document.getElementById("dcca-parameterization-value").disabled = true;    
     document.getElementById("granularity-chunks-value").value = 1;
     document.getElementById("check-all-pairs").checked = true;
@@ -1155,7 +1156,7 @@ function init_form(wme) {
     $('#correlation-type').selectpicker('selectAll');
     update_correlation();
     $('#correlation').selectpicker('selectAll');
-    $("[name='check-pca']").prop("checked", true);
+    //$("[name='check-pca']").prop("checked", true);
 };
 
 
@@ -1417,7 +1418,7 @@ function activate_form() {
     };
   
     if (document.getElementById("dcca-parameterization-default").checked) {
-        document.getElementById("dcca-parameterization-value").value = 2;
+        document.getElementById("dcca-parameterization-value").value = 1;
         document.getElementById("dcca-parameterization-value").disabled = true;
     } else {
         document.getElementById("dcca-parameterization-value").disabled = false;

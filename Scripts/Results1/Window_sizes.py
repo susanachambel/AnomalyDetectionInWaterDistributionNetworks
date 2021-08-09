@@ -379,11 +379,92 @@ def window_sizes(path_init):
     plt.show()
     plt.close(fig=fig)
         
+def window_sizes_ea(path_init):
+
+    width = 40
+    correlation_type = 'dcca'
+    data_type = 'all'
+    color1 = 'tab:blue'
+    color2 = 'tab:orange'
     
+    row_name = '1-25'
+    dic = {}
+    dic[row_name] = {'1':[],'10':[]}
+    
+    for width in range(16,41,2):
+    
+        df, columns = get_df(path_init, data_type, width, correlation_type)
+        
+        df_row_1 = df.iloc[1393,:]
+        df_row_10 = df.iloc[1402,:]
+        
+        dic[row_name]['1'].append(df_row_1[row_name])
+        dic[row_name]['10'].append(df_row_10[row_name])
+            
+        
+    row_names = []
+    for width in range(16,41,2):
+        row_names.append(width)
+    
+
+    ha_i = [['left','','','','center','','','','center','','','','right'],
+            ['left','','','','center','','','','center','','','','right']]
+
+    xytext_i = [[-18,0,0,0,12,0,0,0,-18,0,0,0,-18],
+                [12,0,0,0,12,0,0,0,-15,0,0,0,12]]
+    
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5,4))
+
+    ax.set_ylabel('DCCA (n=1)', fontsize = 14)
+    ax.set_xlabel('Time Window Size', fontsize = 14)
+    
+    x = row_names 
+    y1 = dic[row_name]['1']
+    y2 = dic[row_name]['10']
+                        
+    ax.plot(x, y1, color=color1, marker='s', markersize=4, label='w/o leakage')
+    ax.plot(x, y2, color=color2, marker='o', markersize=4, label='w/ leakage (coef=2.0)')
+    
+    ax.grid(True, axis='y', alpha=0.3, which='both')
+    
+    j=0
+    for x,y1,y2,ha1,ha2,xytext1,xytext2 in zip(x,y1,y2,ha_i[0],ha_i[1],xytext_i[0],xytext_i[1]):
+
+        if j%4 == 0:
+            label = "{:.2f}".format(y1)
+            ax.annotate(label, # this is the text
+                        (x,y1), # this is the point to label
+                        textcoords="offset points", # how to position the text
+                        xytext=(0,xytext1), # distance from text to points (x,y)
+                        ha=ha1, bbox=dict(facecolor="w",edgecolor=color1,alpha=0.4,boxstyle="round")
+                        ) # horizontal alignment can be left, right or center
+            label = "{:.2f}".format(y2)
+            ax.annotate(label, # this is the text
+                        (x,y2), # this is the point to label
+                        textcoords="offset points", # how to position the text
+                        xytext=(0,xytext2), # distance from text to points (x,y)
+                        ha=ha2, bbox=dict(facecolor="w",edgecolor=color2,alpha=0.4,boxstyle="round")
+                        ) # horizontal alignment can be left, right or center
+        j+=1
+    
+    
+    ax.legend(loc='upper left', fontsize = 14)
+        
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(4))
+    ax.xaxis.set_minor_locator(ticker.MultipleLocator(2))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.2))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+     
+    plt.ylim(-1,0.5)
+    fig.tight_layout()
+    plt.savefig(path_init + '\\Images\\Results1\\Window Sizes\\window_sizes_lc_ea.png', format='png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close(fig=fig)    
 
 config = Configuration()
 path_init = config.path
 
-window_sizes(path_init)
+#window_sizes(path_init)
+window_sizes_ea(path_init)
 #leakage_sizes_hm(path_init)
 
